@@ -17,13 +17,12 @@
         .filter-bar::-webkit-scrollbar { display: none; }
         .filter-chip { padding: 6px 14px; border-radius: 20px; border: 1px solid #555; background: rgba(255,255,255,0.05); color: #ccc; font-size: 0.75rem; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: all 0.2s; font-family: inherit; }
         .filter-chip.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
-        .filter-chip:hover { border-color: var(--accent); }
         .filter-more-btn { border-color: var(--gold); color: var(--gold); }
         .filter-expanded { display: none; flex-wrap: wrap; gap: 6px; padding: 8px 12px; background: rgba(0,0,0,0.8); position: fixed; top: 44px; left: 0; right: 0; z-index: 99; max-width: 600px; margin: 0 auto; }
         .slides-container { height: 100vh; overflow-y: scroll; scroll-snap-type: y mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
         .slide { scroll-snap-align: start; height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; background: #000; }
         .slide-media { width: 100%; height: 100%; object-fit: contain; }
-        .slide-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 80px 16px 20px; background: linear-gradient(transparent, rgba(0,0,0,0.9)); pointer-events: none; }
+        .slide-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 80px 16px 100px; background: linear-gradient(transparent, rgba(0,0,0,0.9)); pointer-events: none; }
         .slide-user-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
         .slide-av { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: bold; color: #000; font-size: 1rem; overflow: hidden; border: 2px solid var(--gold); }
         .slide-av img { width: 100%; height: 100%; object-fit: cover; }
@@ -33,13 +32,14 @@
         .slide-tags { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; }
         .slide-tag { background: rgba(173,216,230,0.2); color: var(--accent); padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; }
         .slide-location { color: var(--text-muted); font-size: 0.7rem; margin-top: 4px; }
-        .slide-actions-bar { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px 16px 20px; background: linear-gradient(transparent, rgba(0,0,0,0.95)); display: flex; justify-content: space-around; align-items: center; gap: 8px; opacity: 0; transition: opacity 0.3s; z-index: 10; }
-        .slide:hover .slide-actions-bar, .slide.touched .slide-actions-bar { opacity: 1; }
+        .slide-actions-bar { position: absolute; bottom: 0; left: 0; right: 0; padding: 12px 16px 20px; background: linear-gradient(transparent, rgba(0,0,0,0.95)); display: flex; justify-content: space-around; align-items: center; gap: 8px; opacity: 0; transition: opacity 0.3s; z-index: 10; }
+        .slide:hover .slide-actions-bar, .slide.touched .slide-actions-bar, .slide-actions-bar.always-show { opacity: 1; }
         .slide-action-btn { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff; cursor: pointer; font-size: 1.3rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
         .slide-action-btn:hover { background: rgba(255,255,255,0.25); transform: scale(1.1); }
         .slide-action-btn.liked { color: #FF6B6B; border-color: #FF6B6B; background: rgba(255,107,107,0.2); }
         .slide-action-btn.bookmarked { color: var(--gold); border-color: var(--gold); background: rgba(255,215,0,0.2); }
         .action-count { font-size: 0.7rem; color: #fff; text-align: center; margin-top: 2px; }
+        .sound-indicator { position: absolute; top: 16px; right: 16px; z-index: 20; background: rgba(0,0,0,0.6); color: #fff; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 1rem; cursor: pointer; }
         .nav-arrow { position: fixed; right: 20px; z-index: 50; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.3); color: #fff; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
         .nav-up { top: 80px; }
         .nav-down { bottom: 160px; }
@@ -149,13 +149,15 @@ function filterSlides() {
         var tags = (post.text || '').match(/#[\w-]+/g) || [];
         var locationMatch = (post.text || '').match(/📍\s*(.+)/);
         var location = locationMatch ? locationMatch[1] : '';
+        var isVideo = post.media_type === 'video';
         return '<div class="slide" id="slide-' + index + '" onclick="toggleTouch(this)">' +
-            (post.media_type === 'video' ? '<video class="slide-media" src="' + post.media + '" loop muted playsinline></video>' : mediaFiles[0] ? '<img class="slide-media" src="' + mediaFiles[0] + '" alt="Slide">' : '<div style="color:#999;text-align:center;padding:40px;">No media</div>') +
+            (isVideo ? '<video class="slide-media" src="' + post.media + '" loop playsinline></video>' : mediaFiles[0] ? '<img class="slide-media" src="' + mediaFiles[0] + '" alt="Slide">' : '<div style="color:#999;text-align:center;padding:40px;">No media</div>') +
+            (isVideo ? '<div class="sound-indicator" id="soundIcon-' + index + '" onclick="event.stopPropagation();toggleSound(\'slide-' + index + '\', this)">🔇</div>' : '') +
             '<div class="slide-actions-bar">' +
                 '<div style="text-align:center;"><button class="slide-action-btn" onclick="event.stopPropagation();likePost(\'' + post.id + '\', this)">❤️</button><div class="action-count">' + (post.likes_count || 0) + '</div></div>' +
                 '<button class="slide-action-btn" onclick="event.stopPropagation();bookmarkPost(\'' + post.id + '\', this)">🔖</button>' +
                 '<button class="slide-action-btn" onclick="event.stopPropagation();sharePost()">↗️</button>' +
-                '<button class="slide-action-btn" onclick="event.stopPropagation();toggleTouch(document.getElementById(\'slide-' + index + '\'))">💬</button>' +
+                '<button class="slide-action-btn" onclick="event.stopPropagation();openComments(\'' + post.id + '\')">💬</button>' +
                 (post.user_id === currentUser.id ? '<button class="slide-action-btn" onclick="event.stopPropagation();deleteSlide(\'' + post.id + '\')">🗑️</button>' : '') +
             '</div>' +
             '<div class="slide-overlay">' +
@@ -165,17 +167,87 @@ function filterSlides() {
                 (location ? '<div class="slide-location">📍 ' + location + '</div>' : '') +
             '</div></div>';
     }).join('');
-    currentSlideIndex = 0; container.scrollTop = 0; updateCounter(); setTimeout(function() { playCurrentVideo(); }, 500);
+    currentSlideIndex = 0; container.scrollTop = 0; updateCounter();
+    setTimeout(function() { 
+        var firstSlide = document.getElementById('slide-0');
+        if (firstSlide) { firstSlide.classList.add('touched'); }
+        var bar = document.querySelector('#slide-0 .slide-actions-bar');
+        if (bar) bar.classList.add('always-show');
+        setTimeout(function() { if (bar) bar.classList.remove('always-show'); firstSlide.classList.remove('touched'); }, 3000);
+        playCurrentVideo(); 
+    }, 500);
 }
 
-function toggleTouch(slide) { slide.classList.toggle('touched'); var video = slide.querySelector('video'); if (video) { if (video.paused) video.play().catch(function() {}); else video.pause(); } }
-function nextSlide() { var container = document.getElementById('slidesContainer'); var maxIndex = container.querySelectorAll('.slide').length - 1; if (currentSlideIndex < maxIndex) { currentSlideIndex++; container.scrollTo({ top: currentSlideIndex * window.innerHeight, behavior: 'smooth' }); updateCounter(); setTimeout(function() { playCurrentVideo(); }, 500); } }
-function prevSlide() { if (currentSlideIndex > 0) { currentSlideIndex--; document.getElementById('slidesContainer').scrollTo({ top: currentSlideIndex * window.innerHeight, behavior: 'smooth' }); updateCounter(); setTimeout(function() { playCurrentVideo(); }, 500); } }
-function playCurrentVideo() { document.querySelectorAll('.slide video').forEach(function(v) { v.pause(); }); var cs = document.getElementById('slide-' + currentSlideIndex); if (cs) { var video = cs.querySelector('video'); if (video) video.play().catch(function() {}); } }
+function toggleTouch(slide) { 
+    slide.classList.toggle('touched'); 
+    var video = slide.querySelector('video'); 
+    if (video) { 
+        if (video.paused) { video.play().catch(function() {}); } 
+        else { video.pause(); } 
+    }
+    var bar = slide.querySelector('.slide-actions-bar');
+    if (bar && slide.classList.contains('touched')) {
+        bar.classList.add('always-show');
+    } else if (bar) {
+        setTimeout(function() { bar.classList.remove('always-show'); }, 500);
+    }
+}
+
+function toggleSound(slideId, icon) {
+    var slide = document.getElementById(slideId);
+    if (!slide) return;
+    var video = slide.querySelector('video');
+    if (!video) return;
+    video.muted = !video.muted;
+    icon.textContent = video.muted ? '🔇' : '🔊';
+}
+
+function nextSlide() { 
+    var container = document.getElementById('slidesContainer'); 
+    var slides = container.querySelectorAll('.slide');
+    var maxIndex = slides.length - 1; 
+    if (currentSlideIndex < maxIndex) { 
+        // Hide previous slide action bar
+        var prevSlide = document.getElementById('slide-' + currentSlideIndex);
+        if (prevSlide) { prevSlide.classList.remove('touched'); var pb = prevSlide.querySelector('.slide-actions-bar'); if (pb) pb.classList.remove('always-show'); }
+        currentSlideIndex++; 
+        container.scrollTo({ top: currentSlideIndex * window.innerHeight, behavior: 'smooth' }); 
+        updateCounter(); 
+        setTimeout(function() { playCurrentVideo(); }, 500); 
+    } 
+}
+
+function prevSlide() { 
+    if (currentSlideIndex > 0) { 
+        var prevSlide = document.getElementById('slide-' + currentSlideIndex);
+        if (prevSlide) { prevSlide.classList.remove('touched'); var pb = prevSlide.querySelector('.slide-actions-bar'); if (pb) pb.classList.remove('always-show'); }
+        currentSlideIndex--; 
+        document.getElementById('slidesContainer').scrollTo({ top: currentSlideIndex * window.innerHeight, behavior: 'smooth' }); 
+        updateCounter(); 
+        setTimeout(function() { playCurrentVideo(); }, 500); 
+    } 
+}
+
+function playCurrentVideo() { 
+    document.querySelectorAll('.slide video').forEach(function(v) { v.pause(); }); 
+    var cs = document.getElementById('slide-' + currentSlideIndex); 
+    if (cs) { 
+        var video = cs.querySelector('video'); 
+        if (video) { 
+            video.muted = false; // Sound ON by default
+            video.play().catch(function() {}); 
+            var icon = document.getElementById('soundIcon-' + currentSlideIndex);
+            if (icon) icon.textContent = video.muted ? '🔇' : '🔊';
+        } 
+    } 
+}
+
 function updateCounter() { var total = document.querySelectorAll('.slide').length; document.getElementById('slideCounter').textContent = (currentSlideIndex + 1) + ' / ' + total; }
+
 function likePost(postId, btn) { fetch(API_BASE + '/like', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id, postId: postId }) }).then(function(r) { return r.json(); }).then(function(result) { if (result.success) { btn.classList.toggle('liked', result.liked); var ce = btn.parentElement.querySelector('.action-count'); if (ce) { var num = parseInt(ce.textContent) || 0; ce.textContent = result.liked ? num + 1 : Math.max(0, num - 1); } showToast(result.liked ? '❤️ Liked!' : 'Like removed'); } }); }
 function bookmarkPost(postId, btn) { fetch(API_BASE + '/bookmarks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id, postId: postId }) }).then(function(r) { return r.json(); }).then(function(result) { if (result.success) { btn.classList.toggle('bookmarked', result.bookmarked); showToast(result.bookmarked ? '🔖 Bookmarked!' : 'Bookmark removed'); } }); }
 function sharePost() { if (navigator.share) { navigator.share({ title: 'Muse Post', url: window.location.href }); } else { showToast('Link copied!'); } }
+function openComments(postId) { showToast('💬 Comments open on Centre page'); }
 function deleteSlide(postId) { if (!confirm('Delete this post?')) return; fetch(API_BASE + '/posts/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id, postId: postId }) }).then(function(r) { return r.json(); }).then(function(result) { if (result.success) { showToast('Deleted 🗑️'); loadSlides(); } }); }
 function showToast(msg) { var t = document.getElementById('toast'); t.textContent = msg; t.style.opacity = '1'; setTimeout(function() { t.style.opacity = '0'; }, 2000); }
 </script>
