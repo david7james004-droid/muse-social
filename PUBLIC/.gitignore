@@ -1,0 +1,8 @@
+node_modules/
+muse.db.json
+public/uploads/*
+!public/uploads/images/
+!public/uploads/videos/
+!public/uploads/avatars/
+!public/uploads/stories/
+.env

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#808080">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>Settings | Muse</title>
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <style>
+        :root { --bg: #808080; --bg-dark: #606060; --bg-darker: #404040; --bg-card: rgba(0,0,0,0.2); --text: #FFFFFF; --text-muted: #999999; --accent: #ADD8E6; --gold: #FFD700; --danger: #FF6B6B; --success: #4CAF50; --radius: 16px; --radius-sm: 8px; --footer-height: 70px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; padding-bottom: calc(var(--footer-height) + 100px); }
+        .app-container { max-width: 600px; margin: 0 auto; min-height: 100vh; }
+        .top-nav { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-dark); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.1); height: 50px; }
+        .nav-left { position: relative; }
+        .muse-menu-btn { background: none; border: none; cursor: pointer; padding: 4px; }
+        .nav-logo-icon { width: 38px; height: 38px; filter: drop-shadow(0 0 8px rgba(255,215,0,0.6)); }
+        .dropdown-menu { display: none; position: absolute; top: 100%; left: 0; background: var(--bg-darker); border-radius: var(--radius-sm); min-width: 200px; max-height: 350px; overflow-y: auto; z-index: 200; box-shadow: 0 8px 32px rgba(0,0,0,0.4); list-style: none; }
+        .dropdown-menu.show { display: block; }
+        .dropdown-menu li a { display: block; padding: 10px 16px; color: var(--text); text-decoration: none; font-size: 0.9rem; transition: background 0.2s; }
+        .dropdown-menu li a:hover { background: var(--accent); color: #000; }
+        .nav-center .page-title { font-size: 1.1rem; font-weight: 600; color: var(--accent); letter-spacing: 1px; }
+        .nav-right { display: flex; gap: 8px; align-items: center; }
+        .settings-section { margin: 16px; }
+        .settings-section-header { color: var(--accent); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; padding-left: 4px; }
+        .settings-card { background: var(--bg-card); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s; }
+        .settings-card:hover { background: rgba(173,216,230,0.08); }
+        .settings-card.danger:hover { background: rgba(255,107,107,0.1); }
+        .settings-card-left { display: flex; align-items: center; gap: 10px; }
+        .settings-card-icon { font-size: 1.3rem; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); }
+        .settings-card-label { font-size: 0.9rem; color: var(--text); }
+        .settings-card-desc { font-size: 0.7rem; color: var(--text-muted); }
+        .settings-card-arrow { color: var(--text-muted); font-size: 1.2rem; }
+        .settings-card.danger .settings-card-label { color: var(--danger); }
+        .toggle-switch { position: relative; display: inline-block; width: 48px; height: 26px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #555; transition: 0.3s; border-radius: 26px; }
+        .toggle-slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: 0.3s; border-radius: 50%; }
+        input:checked + .toggle-slider { background-color: var(--accent); }
+        input:checked + .toggle-slider:before { transform: translateX(22px); }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 500; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-box { background: var(--bg-darker); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 400px; }
+        .modal-box h3 { color: var(--accent); margin-bottom: 16px; text-align: center; font-size: 1.1rem; }
+        .modal-box p { color: var(--text-muted); text-align: center; margin-bottom: 12px; font-size: 0.85rem; }
+        .input-group { margin-bottom: 12px; }
+        .input-group label { display: block; color: var(--text-muted); font-size: 0.8rem; margin-bottom: 4px; }
+        .input-group input, .input-group textarea, .input-group select { width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.08); border: 2px solid #666; border-radius: var(--radius-sm); color: #fff; font-size: 0.9rem; font-family: inherit; outline: none; resize: vertical; transition: border-color 0.2s; }
+        .input-group input:focus, .input-group textarea:focus { border-color: var(--accent); }
+        .modal-buttons { display: flex; gap: 8px; margin-top: 16px; }
+        .btn-save { flex: 1; padding: 10px; background: var(--accent); color: #000; border: none; border-radius: 20px; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .btn-danger { flex: 1; padding: 10px; background: var(--danger); color: #fff; border: none; border-radius: 20px; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .btn-cancel { flex: 1; padding: 10px; background: transparent; border: 1px solid #666; color: var(--text-muted); border-radius: 20px; cursor: pointer; font-family: inherit; }
+        .about-section { text-align: center; padding: 24px 16px; margin-top: 8px; }
+        .about-logo { font-size: 2rem; color: var(--accent); font-weight: 300; letter-spacing: 4px; }
+        .about-company { color: var(--text-muted); font-size: 0.8rem; margin: 4px 0; }
+        .about-version { color: var(--text-muted); font-size: 0.7rem; }
+        .about-sponsor { color: var(--accent); font-size: 0.75rem; margin-top: 6px; }
+        .footer-dashboard { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-darker); border-top: 2px solid var(--gold); z-index: 300; max-width: 600px; margin: 0 auto; transition: transform 0.3s ease; }
+        .footer-dashboard.collapsed { transform: translateY(calc(100% - 44px)); }
+        .footer-handle { text-align: center; padding: 6px; cursor: pointer; }
+        .footer-handle-bar { display: inline-block; width: 40px; height: 4px; background: var(--text-muted); border-radius: 2px; }
+        .footer-paths { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px 12px; gap: 4px; }
+        .footer-path { display: flex; flex-direction: column; align-items: center; gap: 2px; text-decoration: none; color: var(--text-muted); font-size: 0.65rem; padding: 6px 8px; border-radius: var(--radius-sm); transition: all 0.2s; min-width: 50px; }
+        .footer-path:hover { color: var(--accent); background: rgba(173,216,230,0.1); }
+        .footer-path-icon { font-size: 1.3rem; }
+        .footer-path-label { font-size: 0.6rem; text-align: center; }
+        .footer-muse-btn { width: 56px; height: 56px; border-radius: 50%; background: #000; border: 3px solid var(--gold); cursor: pointer; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 0 10px rgba(255,215,0,0.5)); flex-shrink: 0; margin: 0 6px; padding: 0; }
+        .footer-muse-btn:hover { transform: scale(1.1); }
+        .footer-muse-btn svg { width: 30px; height: 30px; }
+        #toast { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 24px; border-radius: 20px; z-index: 9999; font-size: 0.9rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+        @media (max-width: 480px) { .footer-muse-btn { width: 46px; height: 46px; } .footer-muse-btn svg { width: 24px; height: 24px; } }
+        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 2px; }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <header class="top-nav">
+        <div class="nav-left">
+            <button class="muse-menu-btn" id="museMenuBtn"><svg viewBox="0 0 40 40" class="nav-logo-icon"><circle cx="20" cy="20" r="18" fill="#000" stroke="#FFD700" stroke-width="1.5"/><text x="20" y="26" text-anchor="middle" font-family="Arial" font-weight="300" font-size="20" fill="#ADD8E6">M</text></svg></button>
+            <ul class="dropdown-menu" id="dropdownMenu">
+                <li><a href="centre.html">🏠 Centre</a></li><li><a href="profile.html">👤 Profile</a></li><li><a href="friends.html">👫 Friends</a></li><li><a href="messages.html">💬 Messages</a></li><li><a href="notifications.html">🔔 Notifications</a></li><li><a href="slideshow.html">🎞️ Slideshow</a></li><li><a href="media-uploads.html">📷 Uploads</a></li><li><a href="settings.html">⚙️ Settings</a></li>
+            </ul>
+        </div>
+        <div class="nav-center"><h1 class="page-title">Settings</h1></div>
+        <div class="nav-right"><a href="profile.html" style="text-decoration:none;font-size:1.3rem;">👤</a></div>
+    </header>
+
+    <div class="settings-section"><div class="settings-section-header">👤 Account</div>
+        <div class="settings-card" onclick="openEditProfileModal()"><div class="settings-card-left"><div class="settings-card-icon">👤</div><div><div class="settings-card-label">Edit Profile</div><div class="settings-card-desc">Change name, bio, avatar, flag</div></div></div><span class="settings-card-arrow">›</span></div>
+        <div class="settings-card" onclick="openPasswordModal()"><div class="settings-card-left"><div class="settings-card-icon">🔒</div><div><div class="settings-card-label">Change Password</div><div class="settings-card-desc">Update your account password</div></div></div><span class="settings-card-arrow">›</span></div>
+    </div>
+    <div class="settings-section"><div class="settings-section-header">🎨 Appearance</div>
+        <div class="settings-card"><div class="settings-card-left"><div class="settings-card-icon">🔔</div><div><div class="settings-card-label">Notification Sound</div><div class="settings-card-desc">Play sound for new notifications</div></div></div><label class="toggle-switch"><input type="checkbox" id="soundToggle" checked><span class="toggle-slider"></span></label></div>
+    </div>
+    <div class="settings-section"><div class="settings-section-header">🔒 Privacy</div>
+        <div class="settings-card" onclick="clearLocalData()"><div class="settings-card-left"><div class="settings-card-icon">🧹</div><div><div class="settings-card-label">Clear Local Data</div><div class="settings-card-desc">Reset stored preferences</div></div></div><span class="settings-card-arrow">›</span></div>
+    </div>
+    <div class="settings-section"><div class="settings-section-header">⚠️ Danger Zone</div>
+        <div class="settings-card" onclick="exportData()"><div class="settings-card-left"><div class="settings-card-icon">📥</div><div><div class="settings-card-label">Export My Data</div><div class="settings-card-desc">Download your posts and profile</div></div></div><span class="settings-card-arrow">›</span></div>
+        <div class="settings-card danger" onclick="openDeleteAccountModal()"><div class="settings-card-left"><div class="settings-card-icon" style="background:rgba(255,107,107,0.15);">🗑️</div><div><div class="settings-card-label">Delete Account</div><div class="settings-card-desc">Permanently remove your account and all data</div></div></div><span class="settings-card-arrow" style="color:var(--danger);">›</span></div>
+    </div>
+    <div class="about-section"><div class="about-logo">Muse</div><div class="about-company">Amusement Inc. — 24/7</div><div class="about-version">Version 1.0.0</div><div class="about-sponsor">🐋 Sponsored by The Blue Whale Family 🐋</div><div class="about-version" style="margin-top:8px;color:var(--accent);" id="aboutUserTag"></div></div>
+</div>
+
+<div class="modal-overlay" id="editProfileModal"><div class="modal-box"><h3>Edit Profile</h3><div class="input-group"><label>Tag Name</label><input type="text" id="editTagName" maxlength="30"></div><div class="input-group"><label>Bio</label><textarea id="editBio" maxlength="160" rows="3"></textarea></div><div class="input-group"><label>Profile Picture</label><input type="file" id="editAvatarInput" accept="image/*" style="color:#fff;"></div><div class="input-group"><label>Country Flag</label><select id="editCountrySelect"><option value="">No flag</option><option value="🇬🇧">🇬🇧 UK</option><option value="🇺🇸">🇺🇸 USA</option><option value="🇨🇦">🇨🇦 Canada</option><option value="🇦🇺">🇦🇺 Australia</option><option value="🇩🇪">🇩🇪 Germany</option><option value="🇫🇷">🇫🇷 France</option><option value="🇮🇹">🇮🇹 Italy</option><option value="🇪🇸">🇪🇸 Spain</option><option value="🇯🇵">🇯🇵 Japan</option><option value="🇧🇷">🇧🇷 Brazil</option><option value="🇮🇳">🇮🇳 India</option><option value="🌍">🌍 Other</option></select></div><p id="editProfileError" style="color:var(--danger);display:none;font-size:0.8rem;text-align:center;"></p><div class="modal-buttons"><button class="btn-cancel" id="cancelEditProfileBtn">Cancel</button><button class="btn-save" id="saveEditProfileBtn">Save Changes</button></div></div></div>
+<div class="modal-overlay" id="passwordModal"><div class="modal-box"><h3>Change Password</h3><div class="input-group"><label>Current Password</label><input type="password" id="currentPassword"></div><div class="input-group"><label>New Password</label><input type="password" id="newPassword" minlength="4"></div><div class="input-group"><label>Confirm New Password</label><input type="password" id="confirmPassword"></div><p id="passwordError" style="color:var(--danger);display:none;font-size:0.8rem;"></p><div class="modal-buttons"><button class="btn-cancel" id="cancelPasswordBtn">Cancel</button><button class="btn-save" id="savePasswordBtn">Update Password</button></div></div></div>
+<div class="modal-overlay" id="deleteAccountModal"><div class="modal-box" style="text-align:center;"><h3 style="color:var(--danger);">Delete Account?</h3><p>This will permanently delete your account, all your posts, messages, friends, and data.</p><p style="color:var(--danger);font-weight:600;">Type "DELETE" to confirm:</p><div class="input-group"><input type="text" id="deleteConfirmInput" placeholder="Type DELETE" style="text-align:center;"></div><div class="modal-buttons"><button class="btn-cancel" id="cancelDeleteAccountBtn">Cancel</button><button class="btn-danger" id="confirmDeleteAccountBtn" disabled>Delete Forever</button></div></div></div>
+
+<footer class="footer-dashboard collapsed" id="footerDashboard">
+    <div class="footer-handle" id="footerHandle"><div class="footer-handle-bar"></div></div>
+    <div class="footer-paths">
+        <a href="profile.html" class="footer-path"><span class="footer-path-icon">👤</span><span class="footer-path-label">Profile</span></a>
+        <a href="media-uploads.html" class="footer-path"><span class="footer-path-icon">📷</span><span class="footer-path-label">Uploads</span></a>
+        <button class="footer-muse-btn" onclick="window.location.href='centre.html'"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="#000" stroke="#FFD700" stroke-width="2"/><text x="20" y="27" text-anchor="middle" font-family="Arial" font-weight="300" font-size="22" fill="#ADD8E6">M</text></svg></button>
+        <a href="friends.html" class="footer-path"><span class="footer-path-icon">👫</span><span class="footer-path-label">Friends</span></a>
+        <a href="slideshow.html" class="footer-path"><span class="footer-path-icon">🎞️</span><span class="footer-path-label">Slideshow</span></a>
+    </div>
+</footer>
+<div id="toast"></div>
+
+<script>
+var API_BASE = '/api';
+var currentUser = null;
+document.addEventListener('DOMContentLoaded', function() { var stored = localStorage.getItem('muse_user'); if (!stored) { window.location.href = 'index.html'; return; } currentUser = JSON.parse(stored); setupUI(); loadSettings(); });
+function setupUI() { document.getElementById('aboutUserTag').textContent = '@' + currentUser.tag_name; document.getElementById('museMenuBtn').addEventListener('click', function(e) { e.stopPropagation(); document.getElementById('dropdownMenu').classList.toggle('show'); }); document.addEventListener('click', function() { document.getElementById('dropdownMenu').classList.remove('show'); }); document.getElementById('cancelEditProfileBtn').addEventListener('click', function() { document.getElementById('editProfileModal').classList.remove('active'); }); document.getElementById('saveEditProfileBtn').addEventListener('click', saveProfileFromSettings); document.getElementById('editProfileModal').addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); }); document.getElementById('cancelPasswordBtn').addEventListener('click', function() { document.getElementById('passwordModal').classList.remove('active'); clearPasswordFields(); }); document.getElementById('savePasswordBtn').addEventListener('click', changePassword); document.getElementById('passwordModal').addEventListener('click', function(e) { if (e.target === this) { this.classList.remove('active'); clearPasswordFields(); } }); document.getElementById('cancelDeleteAccountBtn').addEventListener('click', function() { document.getElementById('deleteAccountModal').classList.remove('active'); document.getElementById('deleteConfirmInput').value = ''; document.getElementById('confirmDeleteAccountBtn').disabled = true; }); document.getElementById('confirmDeleteAccountBtn').addEventListener('click', deleteAccount); document.getElementById('deleteAccountModal').addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); }); document.getElementById('deleteConfirmInput').addEventListener('input', function() { document.getElementById('confirmDeleteAccountBtn').disabled = this.value !== 'DELETE'; }); document.getElementById('soundToggle').addEventListener('change', saveSettings); document.getElementById('footerHandle').addEventListener('click', function() { document.getElementById('footerDashboard').classList.toggle('collapsed'); }); var startY = 0; var footer = document.getElementById('footerDashboard'); footer.addEventListener('touchstart', function(e) { startY = e.touches[0].clientY; }); footer.addEventListener('touchmove', function(e) { var diff = startY - e.touches[0].clientY; if (diff > 30) footer.classList.remove('collapsed'); else if (diff < -30) footer.classList.add('collapsed'); }); }
+function loadSettings() { var settings = JSON.parse(localStorage.getItem('muse_settings') || '{}'); if (settings.soundEnabled !== undefined) document.getElementById('soundToggle').checked = settings.soundEnabled; }
+function saveSettings() { localStorage.setItem('muse_settings', JSON.stringify({ soundEnabled: document.getElementById('soundToggle').checked })); showToast('Settings saved ✅'); }
+function openEditProfileModal() { document.getElementById('editTagName').value = currentUser.tag_name || ''; document.getElementById('editBio').value = currentUser.bio || ''; var sel = document.getElementById('editCountrySelect'); for (var i = 0; i < sel.options.length; i++) { if (sel.options[i].value === currentUser.country_flag) { sel.selectedIndex = i; break; } } document.getElementById('editProfileModal').classList.add('active'); }
+function saveProfileFromSettings() { var tagName = document.getElementById('editTagName').value.trim(); var bio = document.getElementById('editBio').value.trim(); var countryFlag = document.getElementById('editCountrySelect').value; var avatarFile = document.getElementById('editAvatarInput').files[0]; var errorEl = document.getElementById('editProfileError'); if (!tagName || tagName.length < 2) { errorEl.textContent = 'Tag name must be at least 2 characters'; errorEl.style.display = 'block'; return; } errorEl.style.display = 'none'; var formData = new FormData(); formData.append('userId', currentUser.id); formData.append('bio', bio); formData.append('tagName', tagName); formData.append('countryFlag', countryFlag); if (avatarFile) formData.append('avatar', avatarFile); fetch(API_BASE + '/profile/update', { method: 'POST', body: formData }).then(function(r) { return r.json(); }).then(function(result) { if (result.success) { currentUser.tag_name = result.user.tag_name; currentUser.bio = result.user.bio; currentUser.avatar = result.user.avatar; currentUser.country_flag = result.user.country_flag; localStorage.setItem('muse_user', JSON.stringify(currentUser)); document.getElementById('editProfileModal').classList.remove('active'); document.getElementById('aboutUserTag').textContent = '@' + currentUser.tag_name; showToast('Profile updated! ✅'); } else { errorEl.textContent = result.error || 'Failed'; errorEl.style.display = 'block'; } }); }
+function openPasswordModal() { document.getElementById('passwordModal').classList.add('active'); document.getElementById('currentPassword').focus(); }
+function clearPasswordFields() { document.getElementById('currentPassword').value = ''; document.getElementById('newPassword').value = ''; document.getElementById('confirmPassword').value = ''; document.getElementById('passwordError').style.display = 'none'; }
+function changePassword() { var current = document.getElementById('currentPassword').value, newPass = document.getElementById('newPassword').value, confirm = document.getElementById('confirmPassword').value; var errorEl = document.getElementById('passwordError'); errorEl.style.display = 'none'; if (!current || !newPass || !confirm) { errorEl.textContent = 'All fields required'; errorEl.style.display = 'block'; return; } if (newPass.length < 4) { errorEl.textContent = 'Password must be at least 4 characters'; errorEl.style.display = 'block'; return; } if (newPass !== confirm) { errorEl.textContent = 'Passwords do not match'; errorEl.style.display = 'block'; return; } fetch(API_BASE + '/settings/password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id, currentPassword: current, newPassword: newPass }) }).then(function(r) { return r.json(); }).then(function(result) { if (result.success) { document.getElementById('passwordModal').classList.remove('active'); clearPasswordFields(); showToast('Password updated! 🔒'); } else { errorEl.textContent = result.error || 'Failed'; errorEl.style.display = 'block'; } }); }
+function openDeleteAccountModal() { document.getElementById('deleteAccountModal').classList.add('active'); document.getElementById('deleteConfirmInput').focus(); }
+function deleteAccount() { if (document.getElementById('deleteConfirmInput').value !== 'DELETE') return; fetch(API_BASE + '/account/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id }) }).then(function(r) { return r.json(); }).then(function(result) { if (result.success) { localStorage.removeItem('muse_user'); localStorage.removeItem('muse_settings'); showToast('Account deleted. Goodbye 👋'); setTimeout(function() { window.location.href = 'index.html'; }, 1500); } }); }
+function clearLocalData() { if (confirm('Clear all local settings?')) { localStorage.removeItem('muse_settings'); document.getElementById('soundToggle').checked = true; showToast('Local data cleared 🧹'); } }
+function exportData() { var user = JSON.parse(localStorage.getItem('muse_user') || '{}'); var settings = JSON.parse(localStorage.getItem('muse_settings') || '{}'); var blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), user: user, settings: settings }, null, 2)], { type: 'application/json' }); var url = URL.createObjectURL(blob); var a = document.createElement('a'); a.href = url; a.download = 'muse_data_' + (user.tag_name || 'user') + '.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showToast('Data exported! 📥'); }
+function showToast(msg) { var t = document.getElementById('toast'); t.textContent = msg; t.style.opacity = '1'; setTimeout(function() { t.style.opacity = '0'; }, 3000); }
+</script>
+</body>
+</html>

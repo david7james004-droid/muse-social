@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#808080">
+    <title>Register | Muse</title>
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #808080; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .container { text-align: center; padding: 2rem; max-width: 400px; width: 100%; }
+        .logo-circle { width: 120px; height: 120px; margin: 0 auto 1rem; filter: drop-shadow(0 0 20px rgba(255,215,0,0.6)); animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        .app-title { font-family: 'Arial',sans-serif; font-size: 2rem; font-weight: 300; color: #ADD8E6; letter-spacing: 4px; margin-bottom: 0.25rem; }
+        .company-branding { display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem; }
+        .amusement { font-size: 1rem; color: #FFFFFF; letter-spacing: 2px; text-transform: uppercase; }
+        .inc { font-size: 0.7rem; color: #D3D3D3; letter-spacing: 3px; text-transform: uppercase; }
+        .form-box { background: rgba(0,0,0,0.2); border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem; }
+        .form-box h3 { color: #ADD8E6; margin-bottom: 1rem; font-size: 1rem; }
+        .input-group { margin-bottom: 0.75rem; }
+        .input-group input, .input-group select { width: 100%; padding: 0.75rem 1rem; border: 2px solid #666; border-radius: 25px; background: rgba(255,255,255,0.08); color: white; font-size: 0.95rem; font-family: inherit; outline: none; transition: border-color 0.3s; box-sizing: border-box; }
+        .input-group input:focus, .input-group select:focus { border-color: #ADD8E6; }
+        .input-group input::placeholder { color: #999; }
+        .input-row { display: flex; gap: 0.5rem; }
+        .input-row .input-group { flex: 1; }
+        .btn-register { width: 100%; padding: 0.9rem; border: none; border-radius: 50px; background: #ADD8E6; color: #000; font-size: 1.1rem; font-weight: 600; cursor: pointer; letter-spacing: 1px; text-transform: uppercase; transition: all 0.3s; font-family: inherit; }
+        .btn-register:hover { background: #9EC5D6; }
+        .btn-register:disabled { opacity: 0.6; cursor: not-allowed; }
+        .error-msg { color: #FF6B6B; font-size: 0.8rem; margin-top: 0.25rem; display: none; }
+        .success-msg { color: #4CAF50; font-size: 0.8rem; margin-top: 0.25rem; display: none; }
+        .login-link { color: #999; font-size: 0.85rem; margin-top: 1rem; }
+        .login-link a { color: #ADD8E6; text-decoration: none; font-weight: 600; }
+        .login-link a:hover { text-decoration: underline; }
+        .footer-text { font-size: 0.7rem; color: #999; margin-top: 1rem; }
+        .loading-spinner { display: none; width: 20px; height: 20px; border: 2px solid rgba(0,0,0,0.3); border-top-color: #000; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .password-strength { height: 4px; background: #333; border-radius: 2px; margin-top: 4px; overflow: hidden; }
+        .password-strength-fill { height: 100%; width: 0%; transition: width 0.3s, background 0.3s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo-circle">
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><defs><filter id="ys"><feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#FFD700" flood-opacity="0.8"/></filter></defs><circle cx="100" cy="100" r="95" fill="#000" filter="url(#ys)"/><text x="100" y="115" text-anchor="middle" font-family="Arial" font-weight="300" font-size="110" fill="#ADD8E6" letter-spacing="-2">M</text><path id="cp" d="M 30 145 A 65 65 0 0 0 170 145" fill="transparent"/><text font-family="Arial" font-size="12" fill="#ADD8E6"><textPath href="#cp" startOffset="50%" text-anchor="middle">Muse Social Media 2026</textPath></text></svg>
+        </div>
+        <h1 class="app-title">Muse</h1>
+        <div class="company-branding"><span class="amusement">Amusement</span><span class="inc">Inc.</span></div>
+        <div class="form-box">
+            <h3>Create Your Account</h3>
+            <div class="input-group"><input type="text" id="regTagName" placeholder="Choose a Tag Name" maxlength="30" autocomplete="off"></div>
+            <div class="input-group"><input type="email" id="regEmail" placeholder="Email Address (optional)" autocomplete="email"></div>
+            <div class="input-group"><input type="password" id="regPassword" placeholder="Create Password" maxlength="50"><div class="password-strength"><div class="password-strength-fill" id="passwordStrength"></div></div></div>
+            <div class="input-group"><input type="password" id="regConfirmPassword" placeholder="Confirm Password" maxlength="50"></div>
+            <div class="input-row"><div class="input-group"><input type="number" id="regAge" placeholder="Age" min="13" max="120"></div><div class="input-group"><select id="regCountry"><option value="">🌍 Country</option><option value="GB">🇬🇧 United Kingdom</option><option value="US">🇺🇸 United States</option><option value="CA">🇨🇦 Canada</option><option value="AU">🇦🇺 Australia</option><option value="DE">🇩🇪 Germany</option><option value="FR">🇫🇷 France</option><option value="IT">🇮🇹 Italy</option><option value="ES">🇪🇸 Spain</option><option value="JP">🇯🇵 Japan</option><option value="BR">🇧🇷 Brazil</option><option value="IN">🇮🇳 India</option><option value="OTHER">🌍 Other</option></select></div></div>
+            <p class="error-msg" id="regError"></p>
+            <p class="success-msg" id="regSuccess">Account created! Redirecting...</p>
+            <button class="btn-register" id="btnRegister"><span id="regText">Create Account</span><div class="loading-spinner" id="regSpinner"></div></button>
+        </div>
+        <p class="login-link">Already have an account? <a href="login.html">Sign In</a></p>
+        <p class="login-link"><a href="index.html">← Skip for now</a></p>
+        <p class="footer-text">&copy; 2026 Muse Social-Media by Amusement Inc. All rights reserved.</p>
+    </div>
+    <script>
+        var API_BASE = '/api';
+        var countryFlags = { GB: '🇬🇧', US: '🇺🇸', CA: '🇨🇦', AU: '🇦🇺', DE: '🇩🇪', FR: '🇫🇷', IT: '🇮🇹', ES: '🇪🇸', JP: '🇯🇵', BR: '🇧🇷', IN: '🇮🇳', OTHER: '🌍' };
+        document.getElementById('regPassword').addEventListener('input', function() { var s=0,p=this.value; if(p.length>=4)s+=25; if(p.length>=8)s+=25; if(/[A-Z]/.test(p))s+=25; if(/[0-9]/.test(p)||/[^A-Za-z0-9]/.test(p))s+=25; var f=document.getElementById('passwordStrength'); f.style.width=s+'%'; f.style.background=s<=25?'#FF6B6B':s<=50?'#FFD700':s<=75?'#ADD8E6':'#4CAF50'; });
+        document.getElementById('btnRegister').addEventListener('click', async function() {
+            var tagName = document.getElementById('regTagName').value.trim(), email = document.getElementById('regEmail').value.trim(), password = document.getElementById('regPassword').value, confirmPassword = document.getElementById('regConfirmPassword').value, age = parseInt(document.getElementById('regAge').value) || null, country = document.getElementById('regCountry').value;
+            var errorEl = document.getElementById('regError'), successEl = document.getElementById('regSuccess'); errorEl.style.display = 'none'; successEl.style.display = 'none';
+            if (!tagName || tagName.length < 2) { errorEl.textContent = 'Tag name must be at least 2 characters'; errorEl.style.display = 'block'; return; }
+            if (!password || password.length < 4) { errorEl.textContent = 'Password must be at least 4 characters'; errorEl.style.display = 'block'; return; }
+            if (password !== confirmPassword) { errorEl.textContent = 'Passwords do not match'; errorEl.style.display = 'block'; return; }
+            var btn = document.getElementById('btnRegister'), text = document.getElementById('regText'), spinner = document.getElementById('regSpinner');
+            btn.disabled = true; text.style.display = 'none'; spinner.style.display = 'block';
+            try {
+                var response = await fetch(API_BASE + '/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tagName: tagName, email: email, password: password, age: age, country: country || null, countryFlag: countryFlags[country] || '' }) });
+                var data = await response.json();
+                if (data.success) { successEl.style.display = 'block'; localStorage.setItem('muse_user', JSON.stringify(data.user)); setTimeout(function() { window.location.href = 'centre.html'; }, 1000); }
+                else { errorEl.textContent = data.error || 'Registration failed'; errorEl.style.display = 'block'; }
+            } catch (err) { errorEl.textContent = 'Cannot connect to server'; errorEl.style.display = 'block'; }
+            btn.disabled = false; text.style.display = 'inline'; spinner.style.display = 'none';
+        });
+        document.addEventListener('keydown', function(e) { if (e.key === 'Enter') document.getElementById('btnRegister').click(); });
+    </script>
+</body>
+</html>
