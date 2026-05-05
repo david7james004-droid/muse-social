@@ -1,1 +1,1 @@
-{"build": {"builder": "NIXPACKS"}} 
+{"build": {"builder": "NIXPACKS", "buildCommand": "npm install"}, "deploy": {"startCommand": "node server.js", "restartPolicyType": "ON_FAILURE"}} 
