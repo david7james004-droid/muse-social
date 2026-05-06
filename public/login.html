@@ -10,152 +10,104 @@
     <link rel="apple-touch-icon" href="icon-192.png">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            display: flex; align-items: center; justify-content: center;
-            min-height: 100vh; background: #808080;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
+        body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #808080; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         .container { text-align: center; padding: 2rem; max-width: 400px; width: 100%; }
-        .logo-circle {
-            width: 120px; height: 120px; margin: 0 auto 1rem;
-            filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
-            animation: float 3s ease-in-out infinite;
-        }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        .app-title { font-family: 'Arial', sans-serif; font-size: 2rem; font-weight: 300; color: #ADD8E6; letter-spacing: 4px; margin-bottom: 0.25rem; }
+        .logo-circle { width: 120px; height: 120px; margin: 0 auto 1rem; filter: drop-shadow(0 0 20px rgba(255,215,0,0.6)); animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        .app-title { font-family: 'Arial',sans-serif; font-size: 2rem; font-weight: 300; color: #ADD8E6; letter-spacing: 4px; margin-bottom: 0.25rem; }
         .company-branding { display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem; }
         .amusement { font-size: 1rem; color: #FFFFFF; letter-spacing: 2px; text-transform: uppercase; }
         .inc { font-size: 0.7rem; color: #D3D3D3; letter-spacing: 3px; text-transform: uppercase; }
-
         .form-box { background: rgba(0,0,0,0.2); border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem; }
         .form-box h3 { color: #ADD8E6; margin-bottom: 1rem; font-size: 1rem; }
-
         .input-group { margin-bottom: 0.75rem; }
-        .input-group input {
-            width: 100%; padding: 0.75rem 1rem; border: 2px solid #666;
-            border-radius: 25px; background: rgba(255,255,255,0.08); color: white;
-            font-size: 0.95rem; font-family: inherit; outline: none; transition: border-color 0.3s; box-sizing: border-box;
-        }
+        .input-group input { width: 100%; padding: 0.75rem 1rem; border: 2px solid #666; border-radius: 25px; background: rgba(255,255,255,0.08); color: white; font-size: 0.95rem; font-family: inherit; outline: none; transition: border-color 0.3s; box-sizing: border-box; }
         .input-group input:focus { border-color: #ADD8E6; }
         .input-group input::placeholder { color: #999; }
-
-        .btn-login {
-            width: 100%; padding: 0.9rem; border: 2px solid #ADD8E6; border-radius: 50px;
-            background: transparent; color: #ADD8E6; font-size: 1.1rem; font-weight: 600;
-            cursor: pointer; letter-spacing: 2px; text-transform: uppercase; transition: all 0.3s; font-family: inherit;
-        }
+        .remember-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: #999; font-size: 0.8rem; justify-content: flex-start; padding-left: 4px; }
+        .remember-row input { width: 16px; height: 16px; cursor: pointer; }
+        .btn-login { width: 100%; padding: 0.9rem; border: 2px solid #ADD8E6; border-radius: 50px; background: transparent; color: #ADD8E6; font-size: 1.1rem; font-weight: 600; cursor: pointer; letter-spacing: 2px; text-transform: uppercase; transition: all 0.3s; font-family: inherit; }
         .btn-login:hover { background: #ADD8E6; color: #000; }
         .btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
-
         .error-msg { color: #FF6B6B; font-size: 0.8rem; margin-top: 0.25rem; display: none; }
-
         .register-link { color: #999; font-size: 0.85rem; margin-top: 1rem; }
         .register-link a { color: #ADD8E6; text-decoration: none; font-weight: 600; }
         .register-link a:hover { text-decoration: underline; }
         .footer-text { font-size: 0.7rem; color: #999; margin-top: 1rem; }
-
-        .loading-spinner {
-            display: none; width: 20px; height: 20px;
-            border: 2px solid rgba(173,216,230,0.3); border-top-color: #ADD8E6;
-            border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto;
-        }
+        .loading-spinner { display: none; width: 20px; height: 20px; border: 2px solid rgba(173,216,230,0.3); border-top-color: #ADD8E6; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto; }
         @keyframes spin { to { transform: rotate(360deg); } }
-
         .forgot-link { color: #ADD8E6; font-size: 0.75rem; text-decoration: none; display: block; margin-top: 8px; }
-        .forgot-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="logo-circle">
-            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <filter id="ys" x="-20%" y="-20%" width="140%" height="140%">
-                        <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#FFD700" flood-opacity="0.8"/>
-                    </filter>
-                </defs>
-                <circle cx="100" cy="100" r="95" fill="#000000" filter="url(#ys)"/>
-                <text x="100" y="115" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="300" font-size="110" fill="#ADD8E6" letter-spacing="-2">M</text>
-                <path id="cp" d="M 30 145 A 65 65 0 0 0 170 145" fill="transparent"/>
-                <text font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#ADD8E6" font-weight="300" letter-spacing="1">
-                    <textPath href="#cp" startOffset="50%" text-anchor="middle">Muse Social Media 2026</textPath>
-                </text>
-            </svg>
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><defs><filter id="ys"><feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#FFD700" flood-opacity="0.8"/></filter></defs><circle cx="100" cy="100" r="95" fill="#000" filter="url(#ys)"/><text x="100" y="115" text-anchor="middle" font-family="Arial" font-weight="300" font-size="110" fill="#ADD8E6" letter-spacing="-2">M</text><path id="cp" d="M 30 145 A 65 65 0 0 0 170 145" fill="transparent"/><text font-family="Arial" font-size="12" fill="#ADD8E6"><textPath href="#cp" startOffset="50%" text-anchor="middle">Muse Social Media 2026</textPath></text></svg>
         </div>
-
         <h1 class="app-title">Muse</h1>
-        <div class="company-branding">
-            <span class="amusement">Amusement</span>
-            <span class="inc">Inc.</span>
-        </div>
-
+        <div class="company-branding"><span class="amusement">Amusement</span><span class="inc">Inc.</span></div>
         <div class="form-box">
             <h3>Welcome Back</h3>
-
-            <div class="input-group">
-                <input type="text" id="loginTagName" placeholder="Tag Name" maxlength="30" autocomplete="off">
+            <div class="input-group"><input type="text" id="loginTagName" placeholder="Tag Name" maxlength="30" autocomplete="off"></div>
+            <div class="input-group"><input type="password" id="loginPassword" placeholder="Password"></div>
+            <div class="remember-row">
+                <input type="checkbox" id="rememberMe">
+                <label for="rememberMe">Remember me</label>
             </div>
-            <div class="input-group">
-                <input type="password" id="loginPassword" placeholder="Password">
-            </div>
-
             <p class="error-msg" id="loginError">Invalid tag name or password</p>
-
-            <button class="btn-login" id="btnLogin">
-                <span id="loginText">Sign In</span>
-                <div class="loading-spinner" id="loginSpinner"></div>
-            </button>
-
+            <button class="btn-login" id="btnLogin"><span id="loginText">Sign In</span><div class="loading-spinner" id="loginSpinner"></div></button>
             <a href="#" class="forgot-link" onclick="alert('Password reset coming soon!')">Forgot password?</a>
         </div>
-
         <p class="register-link">Don't have an account? <a href="register.html">Create one</a></p>
         <p class="register-link"><a href="index.html">← Continue without account</a></p>
         <p class="footer-text">&copy; 2026 Muse Social-Media by Amusement Inc. All rights reserved.</p>
     </div>
-
     <script>
-        var API_BASE = 'http://localhost:3000/api';
+        var API_BASE = '/api';
+
+        // Auto-fill if remembered
+        (function() {
+            var remembered = localStorage.getItem('muse_remembered');
+            if (remembered) {
+                var data = JSON.parse(remembered);
+                document.getElementById('loginTagName').value = data.tagName || '';
+                document.getElementById('rememberMe').checked = true;
+            }
+        })();
 
         document.getElementById('btnLogin').addEventListener('click', async function() {
             var tagName = document.getElementById('loginTagName').value.trim();
             var password = document.getElementById('loginPassword').value;
-            var errorEl = document.getElementById('loginError');
-            errorEl.style.display = 'none';
+            var rememberMe = document.getElementById('rememberMe').checked;
+            var errorEl = document.getElementById('loginError'); errorEl.style.display = 'none';
 
             if (!tagName || !password) { errorEl.textContent = 'Enter tag name and password'; errorEl.style.display = 'block'; return; }
 
-            var btn = document.getElementById('btnLogin');
-            var text = document.getElementById('loginText');
-            var spinner = document.getElementById('loginSpinner');
+            var btn = document.getElementById('btnLogin'), text = document.getElementById('loginText'), spinner = document.getElementById('loginSpinner');
             btn.disabled = true; text.style.display = 'none'; spinner.style.display = 'block';
 
             try {
-                var response = await fetch(API_BASE + '/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tagName: tagName, password: password })
-                });
+                var response = await fetch(API_BASE + '/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tagName: tagName, password: password }) });
                 var data = await response.json();
-
                 if (data.success) {
                     localStorage.setItem('muse_user', JSON.stringify(data.user));
+                    // Remember me
+                    if (rememberMe) {
+                        localStorage.setItem('muse_remembered', JSON.stringify({ tagName: tagName }));
+                    } else {
+                        localStorage.removeItem('muse_remembered');
+                    }
                     window.location.href = 'centre.html';
                 } else {
                     errorEl.textContent = data.error || 'Login failed';
                     errorEl.style.display = 'block';
                 }
-            } catch (err) {
-                errorEl.textContent = 'Cannot connect to server. Run: node server.js';
-                errorEl.style.display = 'block';
-            }
+            } catch (err) { errorEl.textContent = 'Cannot connect to server'; errorEl.style.display = 'block'; }
 
             btn.disabled = false; text.style.display = 'inline'; spinner.style.display = 'none';
         });
 
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') document.getElementById('btnLogin').click();
-        });
+        document.addEventListener('keydown', function(e) { if (e.key === 'Enter') document.getElementById('btnLogin').click(); });
     </script>
 </body>
 </html>
