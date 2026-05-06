@@ -13,7 +13,7 @@ const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const fs = require('fs');
-const { MongoClient, ObjectId } = require('mongodb');
+const { MongoClient } = require('mongodb');
 require('dotenv').config();
 
 const app = express();
@@ -22,7 +22,6 @@ const PORT = process.env.PORT || 3000;
 // MongoDB connection
 const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://museadmin:9753124680musesocial1@muse-social-db.lnhptcr.mongodb.net/?appName=muse-social-db';
 const DB_NAME = 'muse-social';
-
 let db;
 
 async function connectDB() {
@@ -40,7 +39,7 @@ async function connectDB() {
 }
 
 // Ensure upload directories exist
-const uploadDirs = ['public/uploads', 'public/uploads/images', 'public/uploads/videos', 'public/uploads/avatars', 'public/uploads/stories'];
+const uploadDirs = ['public/uploads', 'public/uploads/images', 'public/uploads/videos', 'public/uploads/avatars', 'public/uploads/stories', 'public/uploads/messages'];
 uploadDirs.forEach(dir => { if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true }); });
 
 app.use(cors());
@@ -59,7 +58,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } });
 
-// Helper: get collection
 function col(name) { return db ? db.collection(name) : null; }
 
 // ==================== AUTO REGISTER ====================
@@ -67,13 +65,11 @@ app.post('/api/auto-register', async (req, res) => {
     try {
         const userData = req.body;
         if (!db) return res.json({ success: false, error: 'Database not connected' });
-        
         let user = await col('users').findOne({ id: userData.id });
         if (user) {
             await col('users').updateOne({ id: userData.id }, { $set: { last_seen: new Date().toISOString(), is_online: 1 } });
             return res.json({ success: true, user: { id: user.id, tag_name: user.tag_name, country_flag: user.country_flag || '', avatar: user.avatar || '', bio: user.bio || '', muse_coins: user.muse_coins || 0 } });
         }
-        
         const newUser = { id: userData.id, tag_name: userData.tag_name, password_hash: '', email: '', age: null, country: '', country_flag: userData.country_flag || '', bio: userData.bio || '', avatar: userData.avatar || '', join_date: new Date().toISOString(), last_seen: new Date().toISOString(), muse_coins: 100, is_online: 1, is_live: 0 };
         await col('users').insertOne(newUser);
         res.json({ success: true, user: { id: newUser.id, tag_name: newUser.tag_name, country_flag: newUser.country_flag, avatar: newUser.avatar, bio: newUser.bio, muse_coins: newUser.muse_coins } });
@@ -87,10 +83,8 @@ app.post('/api/register', async (req, res) => {
         if (!tagName || tagName.length < 2) return res.json({ success: false, error: 'Tag name must be at least 2 characters' });
         if (!password || password.length < 4) return res.json({ success: false, error: 'Password must be at least 4 characters' });
         if (!db) return res.json({ success: false, error: 'Database not connected' });
-        
         const exists = await col('users').findOne({ tag_name: tagName });
         if (exists) return res.json({ success: false, error: 'Tag name already taken' });
-        
         const newUser = { id: uuidv4(), tag_name: tagName, password_hash: bcrypt.hashSync(password, 10), email: email || '', age: age || null, country: country || '', country_flag: countryFlag || '', bio: '', avatar: '', join_date: new Date().toISOString(), last_seen: new Date().toISOString(), muse_coins: 100, is_online: 1, is_live: 0 };
         await col('users').insertOne(newUser);
         res.json({ success: true, user: { id: newUser.id, tag_name: newUser.tag_name, country_flag: newUser.country_flag, avatar: newUser.avatar, muse_coins: newUser.muse_coins } });
@@ -116,27 +110,19 @@ app.get('/api/posts', async (req, res) => {
         if (!db) return res.json({ success: false, error: 'Database not connected' });
         const { type, userId } = req.query;
         let query = {};
-        
-        if (type === 'slideshow') {
-            // Show all posts marked as slideshow
-            query.slideshow = true;
-        } else if (type === 'friends' && userId) {
+        if (type === 'slideshow') { query.slideshow = true; }
+        else if (type === 'friends' && userId) {
             const friends = await col('friends').find({ $or: [{ user_id: userId }, { friend_id: userId }], status: 'accepted' }).toArray();
             const friendIds = friends.map(f => f.user_id === userId ? f.friend_id : f.user_id);
             friendIds.push(userId);
-            
-            // Show friends' posts AND public posts from anyone
-            query.$or = [
-                { user_id: { $in: friendIds } },
-                { visibility: 'public' }
-            ];
+            query.$or = [{ user_id: { $in: friendIds } }, { visibility: 'public' }];
         }
-        
         let posts = await col('posts').find(query).sort({ created_at: -1 }).limit(50).toArray();
         for (let p of posts) { const u = await col('users').findOne({ id: p.user_id }); p.tag_name = u ? u.tag_name : 'unknown'; p.avatar = u ? u.avatar || '' : ''; p.country_flag = u ? u.country_flag || '' : ''; }
         res.json({ success: true, posts });
     } catch (err) { res.json({ success: false, error: err.message }); }
 });
+
 app.post('/api/posts', upload.fields([{ name: 'image', maxCount: 4 }, { name: 'video', maxCount: 1 }]), async (req, res) => {
     try {
         if (!db) return res.json({ success: false, error: 'Database not connected' });
@@ -174,13 +160,11 @@ app.post('/api/like', async (req, res) => {
         if (!db) return res.json({ success: false, error: 'Database not connected' });
         const { userId, postId } = req.body;
         const existing = await col('likes').findOne({ user_id: userId, post_id: postId });
-        if (existing) {
-            await col('likes').deleteOne({ user_id: userId, post_id: postId });
-            await col('posts').updateOne({ id: postId }, { $inc: { likes_count: -1 } });
-            return res.json({ success: true, liked: false });
-        }
+        if (existing) { await col('likes').deleteOne({ user_id: userId, post_id: postId }); await col('posts').updateOne({ id: postId }, { $inc: { likes_count: -1 } }); return res.json({ success: true, liked: false }); }
         await col('likes').insertOne({ user_id: userId, post_id: postId, created_at: new Date().toISOString() });
         await col('posts').updateOne({ id: postId }, { $inc: { likes_count: 1 } });
+        const post = await col('posts').findOne({ id: postId });
+        if (post && post.user_id !== userId) { const liker = await col('users').findOne({ id: userId }); await col('notifications').insertOne({ id: uuidv4(), user_id: post.user_id, from_user_id: userId, type: 'like', post_id: postId, text: (liker ? liker.tag_name : 'Someone') + ' liked your post', is_read: false, created_at: new Date().toISOString() }); }
         res.json({ success: true, liked: true });
     } catch (err) { res.json({ success: false, error: err.message }); }
 });
@@ -194,162 +178,99 @@ app.post('/api/comments', async (req, res) => {
         const comment = { id: uuidv4(), user_id: userId, post_id: postId, text, created_at: new Date().toISOString() };
         await col('comments').insertOne(comment);
         await col('posts').updateOne({ id: postId }, { $inc: { comments_count: 1 } });
+        const post = await col('posts').findOne({ id: postId });
+        if (post && post.user_id !== userId) { const commenter = await col('users').findOne({ id: userId }); await col('notifications').insertOne({ id: uuidv4(), user_id: post.user_id, from_user_id: userId, type: 'comment', post_id: postId, text: (commenter ? commenter.tag_name : 'Someone') + ' commented on your post', is_read: false, created_at: new Date().toISOString() }); }
         const u = await col('users').findOne({ id: userId });
         res.json({ success: true, comment: { ...comment, tag_name: u ? u.tag_name : '?', avatar: u ? u.avatar || '' : '' } });
     } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 app.get('/api/comments/:postId', async (req, res) => {
-    try {
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const comments = await col('comments').find({ post_id: req.params.postId }).sort({ created_at: 1 }).toArray();
-        for (let c of comments) { const u = await col('users').findOne({ id: c.user_id }); c.tag_name = u ? u.tag_name : '?'; c.avatar = u ? u.avatar || '' : ''; }
-        res.json({ success: true, comments });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const comments = await col('comments').find({ post_id: req.params.postId }).sort({ created_at: 1 }).toArray(); for (let c of comments) { const u = await col('users').findOne({ id: c.user_id }); c.tag_name = u ? u.tag_name : '?'; } res.json({ success: true, comments }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 // ==================== FRIENDS ====================
 app.get('/api/friends/:userId', async (req, res) => {
-    try {
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const friends = await col('friends').find({ $or: [{ user_id: req.params.userId }, { friend_id: req.params.userId }], status: 'accepted' }).toArray();
-        const result = [];
-        for (let f of friends) { const fid = f.user_id === req.params.userId ? f.friend_id : f.user_id; const u = await col('users').findOne({ id: fid }); result.push({ id: fid, tag_name: u ? u.tag_name : '?', avatar: u ? u.avatar || '' : '', country_flag: u ? u.country_flag || '' : '', is_online: u ? u.is_online : 0, friends_since: f.created_at }); }
-        res.json({ success: true, friends: result });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const friends = await col('friends').find({ $or: [{ user_id: req.params.userId }, { friend_id: req.params.userId }], status: 'accepted' }).toArray(); const result = []; for (let f of friends) { const fid = f.user_id === req.params.userId ? f.friend_id : f.user_id; const u = await col('users').findOne({ id: fid }); result.push({ id: fid, tag_name: u ? u.tag_name : '?', avatar: u ? u.avatar || '' : '', country_flag: u ? u.country_flag || '' : '', is_online: u ? u.is_online : 0, friends_since: f.created_at }); } res.json({ success: true, friends: result }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 app.post('/api/friends/request', async (req, res) => {
-    try {
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const { userId, friendTagName } = req.body;
-        const friend = await col('users').findOne({ tag_name: friendTagName });
-        if (!friend) return res.json({ success: false, error: 'User not found' });
-        if (friend.id === userId) return res.json({ success: false, error: 'Cannot add yourself' });
-        const exists = await col('friends').findOne({ $or: [{ user_id: userId, friend_id: friend.id }, { user_id: friend.id, friend_id: userId }] });
-        if (exists) return res.json({ success: false, error: 'Already friends or pending' });
-        await col('friends').insertOne({ id: uuidv4(), user_id: userId, friend_id: friend.id, status: 'pending', created_at: new Date().toISOString() });
-        await col('notifications').insertOne({ id: uuidv4(), user_id: friend.id, from_user_id: userId, type: 'friend_request', text: (await col('users').findOne({ id: userId })).tag_name + ' sent you a friend request', is_read: false, created_at: new Date().toISOString() });
-        res.json({ success: true, message: 'Friend request sent' });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, friendTagName } = req.body; const friend = await col('users').findOne({ tag_name: friendTagName }); if (!friend) return res.json({ success: false, error: 'User not found' }); if (friend.id === userId) return res.json({ success: false, error: 'Cannot add yourself' }); const exists = await col('friends').findOne({ $or: [{ user_id: userId, friend_id: friend.id }, { user_id: friend.id, friend_id: userId }] }); if (exists) return res.json({ success: false, error: 'Already friends or pending' }); await col('friends').insertOne({ id: uuidv4(), user_id: userId, friend_id: friend.id, status: 'pending', created_at: new Date().toISOString() }); const requester = await col('users').findOne({ id: userId }); await col('notifications').insertOne({ id: uuidv4(), user_id: friend.id, from_user_id: userId, type: 'friend_request', text: (requester ? requester.tag_name : 'Someone') + ' sent you a friend request', is_read: false, created_at: new Date().toISOString() }); res.json({ success: true, message: 'Friend request sent' }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 app.post('/api/friends/respond', async (req, res) => {
-    try {
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const { userId, friendId, action } = req.body;
-        if (action === 'accept') await col('friends').updateOne({ user_id: friendId, friend_id: userId, status: 'pending' }, { $set: { status: 'accepted' } });
-        else await col('friends').deleteOne({ user_id: friendId, friend_id: userId, status: 'pending' });
-        res.json({ success: true });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, friendId, action } = req.body; if (action === 'accept') await col('friends').updateOne({ user_id: friendId, friend_id: userId, status: 'pending' }, { $set: { status: 'accepted' } }); else await col('friends').deleteOne({ user_id: friendId, friend_id: userId, status: 'pending' }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 // ==================== MESSAGES ====================
 app.get('/api/messages/:userId/:friendId', async (req, res) => {
-    try {
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const msgs = await col('messages').find({ $or: [{ sender_id: req.params.userId, receiver_id: req.params.friendId }, { sender_id: req.params.friendId, receiver_id: req.params.userId }] }).sort({ created_at: 1 }).limit(100).toArray();
-        for (let m of msgs) { const u = await col('users').findOne({ id: m.sender_id }); m.sender_name = u ? u.tag_name : '?'; }
-        await col('messages').updateMany({ receiver_id: req.params.userId, sender_id: req.params.friendId }, { $set: { is_read: true } });
-        res.json({ success: true, messages: msgs });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const msgs = await col('messages').find({ $or: [{ sender_id: req.params.userId, receiver_id: req.params.friendId }, { sender_id: req.params.friendId, receiver_id: req.params.userId }] }).sort({ created_at: 1 }).limit(100).toArray(); for (let m of msgs) { const u = await col('users').findOne({ id: m.sender_id }); m.sender_name = u ? u.tag_name : '?'; } await col('messages').updateMany({ receiver_id: req.params.userId, sender_id: req.params.friendId }, { $set: { is_read: true } }); res.json({ success: true, messages: msgs }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-app.post('/api/messages', async (req, res) => {
+app.post('/api/messages', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'video', maxCount: 1 }]), async (req, res) => {
     try {
         if (!db) return res.json({ success: false, error: 'Database not connected' });
         const { senderId, receiverId, text } = req.body;
-        const msg = { id: uuidv4(), sender_id: senderId, receiver_id: receiverId, text, is_read: false, created_at: new Date().toISOString() };
+        let media = '', mediaType = '';
+        if (req.files) {
+            if (req.files.image && req.files.image.length > 0) { media = '/uploads/images/' + req.files.image[0].filename; mediaType = 'image'; }
+            if (req.files.video && req.files.video.length > 0) { media = '/uploads/videos/' + req.files.video[0].filename; mediaType = 'video'; }
+        }
+        const msg = { id: uuidv4(), sender_id: senderId, receiver_id: receiverId, text: text || '', media, media_type: mediaType, is_read: false, created_at: new Date().toISOString() };
         await col('messages').insertOne(msg);
         res.json({ success: true, message: msg });
     } catch (err) { res.json({ success: false, error: err.message }); }
 });
+
+app.get('/api/conversations/:userId', async (req, res) => {
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const userId = req.params.userId; const msgs = await col('messages').find({ $or: [{ sender_id: userId }, { receiver_id: userId }] }).toArray(); const involved = {}; msgs.forEach(m => { if (m.sender_id === userId) involved[m.receiver_id] = true; if (m.receiver_id === userId) involved[m.sender_id] = true; }); const conversations = []; for (let otherId of Object.keys(involved)) { const u = await col('users').findOne({ id: otherId }); const lastMsg = await col('messages').findOne({ $or: [{ sender_id: userId, receiver_id: otherId }, { sender_id: otherId, receiver_id: userId }] }, { sort: { created_at: -1 } }); const unread = await col('messages').countDocuments({ receiver_id: userId, sender_id: otherId, is_read: false }); conversations.push({ other_user_id: otherId, tag_name: u ? u.tag_name : '?', avatar: u ? u.avatar || '' : '', is_online: u ? u.is_online : 0, last_message: lastMsg ? (lastMsg.media ? '📎 Media' : lastMsg.text) : 'Start chatting', unread }); } conversations.sort((a, b) => { const aM = msgs.filter(m => (m.sender_id===userId&&m.receiver_id===a.other_user_id)||(m.sender_id===a.other_user_id&&m.receiver_id===userId)).sort((x,y)=>new Date(y.created_at)-new Date(x.created_at))[0]; const bM = msgs.filter(m => (m.sender_id===userId&&m.receiver_id===b.other_user_id)||(m.sender_id===b.other_user_id&&m.receiver_id===userId)).sort((x,y)=>new Date(y.created_at)-new Date(x.created_at))[0]; if(!aM)return 1;if(!bM)return -1;return new Date(bM.created_at)-new Date(aM.created_at); }); res.json({ success: true, conversations }); } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
 // ==================== DELETE MESSAGE ====================
 app.post('/api/messages/delete', async (req, res) => {
-    try {
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const { userId, messageId } = req.body;
-        await col('messages').deleteOne({ id: messageId, sender_id: userId });
-        res.json({ success: true });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, messageId } = req.body; await col('messages').deleteOne({ id: messageId, sender_id: userId }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 // ==================== DELETE CONVERSATION ====================
 app.post('/api/messages/delete-conversation', async (req, res) => {
-    try {
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const { userId, friendId } = req.body;
-        await col('messages').deleteMany({ $or: [{ sender_id: userId, receiver_id: friendId }, { sender_id: friendId, receiver_id: userId }] });
-        res.json({ success: true });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, friendId } = req.body; await col('messages').deleteMany({ $or: [{ sender_id: userId, receiver_id: friendId }, { sender_id: friendId, receiver_id: userId }] }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
+
 // ==================== PROFILE ====================
 app.get('/api/profile/:userId', async (req, res) => {
-    try {
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const user = await col('users').findOne({ id: req.params.userId });
-        if (!user) return res.json({ success: false, error: 'User not found' });
-        const postCount = await col('posts').countDocuments({ user_id: user.id });
-        const friendCount = await col('friends').countDocuments({ $or: [{ user_id: user.id }, { friend_id: user.id }], status: 'accepted' });
-        res.json({ success: true, user: { id: user.id, tag_name: user.tag_name, avatar: user.avatar || '', bio: user.bio || '', country_flag: user.country_flag || '', join_date: user.join_date, muse_coins: user.muse_coins || 0 }, stats: { posts: postCount, friends: friendCount } });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const user = await col('users').findOne({ id: req.params.userId }); if (!user) return res.json({ success: false, error: 'User not found' }); const postCount = await col('posts').countDocuments({ user_id: user.id }); const friendCount = await col('friends').countDocuments({ $or: [{ user_id: user.id }, { friend_id: user.id }], status: 'accepted' }); res.json({ success: true, user: { id: user.id, tag_name: user.tag_name, avatar: user.avatar || '', bio: user.bio || '', country_flag: user.country_flag || '', join_date: user.join_date, muse_coins: user.muse_coins || 0 }, stats: { posts: postCount, friends: friendCount } }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 app.post('/api/profile/update', upload.single('avatar'), async (req, res) => {
-    try {
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const { userId, bio, tagName, countryFlag } = req.body;
-        const update = {};
-        if (req.file) update.avatar = '/uploads/avatars/' + req.file.filename;
-        if (bio !== undefined) update.bio = bio;
-        if (tagName) update.tag_name = tagName;
-        if (countryFlag !== undefined) update.country_flag = countryFlag;
-        await col('users').updateOne({ id: userId }, { $set: update });
-        const user = await col('users').findOne({ id: userId });
-        res.json({ success: true, user: { id: user.id, tag_name: user.tag_name, avatar: user.avatar || '', bio: user.bio || '', country_flag: user.country_flag || '', muse_coins: user.muse_coins || 0 } });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, bio, tagName, countryFlag } = req.body; const update = {}; if (req.file) update.avatar = '/uploads/avatars/' + req.file.filename; if (bio !== undefined) update.bio = bio; if (tagName) update.tag_name = tagName; if (countryFlag !== undefined) update.country_flag = countryFlag; await col('users').updateOne({ id: userId }, { $set: update }); const user = await col('users').findOne({ id: userId }); res.json({ success: true, user: { id: user.id, tag_name: user.tag_name, avatar: user.avatar || '', bio: user.bio || '', country_flag: user.country_flag || '', muse_coins: user.muse_coins || 0 } }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 // ==================== NOTIFICATIONS ====================
 app.get('/api/notifications/:userId', async (req, res) => {
-    try {
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const notifications = await col('notifications').find({ user_id: req.params.userId }).sort({ created_at: -1 }).limit(50).toArray();
-        const unread = await col('notifications').countDocuments({ user_id: req.params.userId, is_read: false });
-        res.json({ success: true, notifications, unread });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const notifications = await col('notifications').find({ user_id: req.params.userId }).sort({ created_at: -1 }).limit(50).toArray(); for (let n of notifications) { const u = await col('users').findOne({ id: n.from_user_id }); n.from_tag_name = u ? u.tag_name : ''; n.from_avatar = u ? u.avatar || '' : ''; } const unread = await col('notifications').countDocuments({ user_id: req.params.userId, is_read: false }); res.json({ success: true, notifications, unread }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 app.post('/api/notifications/read', async (req, res) => {
-    try {
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const { userId, notificationId } = req.body;
-        if (notificationId) await col('notifications').updateOne({ id: notificationId, user_id: userId }, { $set: { is_read: true } });
-        else await col('notifications').updateMany({ user_id: userId }, { $set: { is_read: true } });
-        res.json({ success: true });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, notificationId } = req.body; if (notificationId) await col('notifications').updateOne({ id: notificationId, user_id: userId }, { $set: { is_read: true } }); else await col('notifications').updateMany({ user_id: userId }, { $set: { is_read: true } }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// ==================== SEARCH / BOOKMARKS / WALLET / SETTINGS / ACCOUNT ====================
+// ==================== SEARCH ====================
 app.get('/api/search', async (req, res) => {
-    try {
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const q = (req.query.q || '').toLowerCase();
-        if (!q) return res.json({ success: true, users: [], posts: [] });
-        const users = await col('users').find({ tag_name: { $regex: q, $options: 'i' } }).limit(20).toArray();
-        res.json({ success: true, users: users.map(u => ({ id: u.id, tag_name: u.tag_name, avatar: u.avatar || '', country_flag: u.country_flag || '' })), posts: [] });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const q = (req.query.q || '').toLowerCase(); if (!q) return res.json({ success: true, users: [], posts: [] }); const users = await col('users').find({ tag_name: { $regex: q, $options: 'i' } }).limit(20).toArray(); res.json({ success: true, users: users.map(u => ({ id: u.id, tag_name: u.tag_name, avatar: u.avatar || '', country_flag: u.country_flag || '' })), posts: [] }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
+// ==================== BOOKMARKS ====================
 app.post('/api/bookmarks', async (req, res) => {
-    try {
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const { userId, postId } = req.body;
-        const existing = await col('bookmarks').findOne({ user_id: userId, post_id: postId });
-        if (existing) { await col('bookmarks').deleteOne({ user_id: userId, post_id: postId }); return res.json({ success: true, bookmarked: false }); }
-        await col('bookmarks').insertOne({ user_id: userId, post_id: postId, created_at: new Date().toISOString() });
-        res.json({ success: true, bookmarked: true });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, postId } = req.body; const existing = await col('bookmarks').findOne({ user_id: userId, post_id: postId }); if (existing) { await col('bookmarks').deleteOne({ user_id: userId, post_id: postId }); return res.json({ success: true, bookmarked: false }); } await col('bookmarks').insertOne({ user_id: userId, post_id: postId, created_at: new Date().toISOString() }); res.json({ success: true, bookmarked: true }); } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+// ==================== SETTINGS / ACCOUNT ====================
+app.post('/api/settings/password', async (req, res) => {
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, currentPassword, newPassword } = req.body; const user = await col('users').findOne({ id: userId }); if (!user) return res.json({ success: false, error: 'User not found' }); if (!user.password_hash) return res.json({ success: false, error: 'No password set for auto-generated accounts' }); if (!bcrypt.compareSync(currentPassword, user.password_hash)) return res.json({ success: false, error: 'Current password is incorrect' }); if (!newPassword || newPassword.length < 4) return res.json({ success: false, error: 'New password must be at least 4 characters' }); await col('users').updateOne({ id: userId }, { $set: { password_hash: bcrypt.hashSync(newPassword, 10) } }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+app.post('/api/account/delete', async (req, res) => {
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId } = req.body; await col('posts').deleteMany({ user_id: userId }); await col('likes').deleteMany({ user_id: userId }); await col('comments').deleteMany({ user_id: userId }); await col('friends').deleteMany({ $or: [{ user_id: userId }, { friend_id: userId }] }); await col('messages').deleteMany({ $or: [{ sender_id: userId }, { receiver_id: userId }] }); await col('notifications').deleteMany({ user_id: userId }); await col('bookmarks').deleteMany({ user_id: userId }); await col('users').deleteOne({ id: userId }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 // ==================== START SERVER ====================
