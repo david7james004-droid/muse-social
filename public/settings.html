@@ -54,6 +54,12 @@
         .btn-save { flex: 1; padding: 10px; background: var(--accent); color: #000; border: none; border-radius: 20px; font-weight: 600; cursor: pointer; font-family: inherit; }
         .btn-danger { flex: 1; padding: 10px; background: var(--danger); color: #fff; border: none; border-radius: 20px; font-weight: 600; cursor: pointer; font-family: inherit; }
         .btn-cancel { flex: 1; padding: 10px; background: transparent; border: 1px solid #666; color: var(--text-muted); border-radius: 20px; cursor: pointer; font-family: inherit; }
+        .delete-success-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 600; align-items: center; justify-content: center; padding: 20px; }
+        .delete-success-overlay.active { display: flex; }
+        .delete-success-box { background: var(--bg-darker); border-radius: var(--radius); padding: 40px 30px; text-align: center; max-width: 350px; }
+        .delete-success-box .icon { font-size: 4rem; margin-bottom: 16px; }
+        .delete-success-box h3 { color: var(--accent); margin-bottom: 8px; }
+        .delete-success-box p { color: var(--text-muted); font-size: 0.9rem; }
         .about-section { text-align: center; padding: 24px 16px; margin-top: 8px; }
         .about-logo { font-size: 2rem; color: var(--accent); font-weight: 300; letter-spacing: 4px; }
         .about-company { color: var(--text-muted); font-size: 0.8rem; margin: 4px 0; }
@@ -73,7 +79,6 @@
         .footer-muse-btn svg { width: 30px; height: 30px; }
         #toast { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 24px; border-radius: 20px; z-index: 9999; font-size: 0.9rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
         @media (max-width: 480px) { .footer-muse-btn { width: 46px; height: 46px; } .footer-muse-btn svg { width: 24px; height: 24px; } }
-        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 2px; }
     </style>
 </head>
 <body>
@@ -111,6 +116,17 @@
 <div class="modal-overlay" id="passwordModal"><div class="modal-box"><h3>Change Password</h3><div class="input-group"><label>Current Password</label><input type="password" id="currentPassword"></div><div class="input-group"><label>New Password</label><input type="password" id="newPassword" minlength="4"></div><div class="input-group"><label>Confirm New Password</label><input type="password" id="confirmPassword"></div><p id="passwordError" style="color:var(--danger);display:none;font-size:0.8rem;"></p><div class="modal-buttons"><button class="btn-cancel" id="cancelPasswordBtn">Cancel</button><button class="btn-save" id="savePasswordBtn">Update Password</button></div></div></div>
 <div class="modal-overlay" id="deleteAccountModal"><div class="modal-box" style="text-align:center;"><h3 style="color:var(--danger);">Delete Account?</h3><p>This will permanently delete your account, all your posts, messages, friends, and data.</p><p style="color:var(--danger);font-weight:600;">Type "DELETE" to confirm:</p><div class="input-group"><input type="text" id="deleteConfirmInput" placeholder="Type DELETE" style="text-align:center;"></div><div class="modal-buttons"><button class="btn-cancel" id="cancelDeleteAccountBtn">Cancel</button><button class="btn-danger" id="confirmDeleteAccountBtn" disabled>Delete Forever</button></div></div></div>
 
+<!-- Delete Success Overlay -->
+<div class="delete-success-overlay" id="deleteSuccessOverlay">
+    <div class="delete-success-box">
+        <div class="icon">👋</div>
+        <h3>Account Deleted</h3>
+        <p>Your account and all associated data have been permanently removed.</p>
+        <p style="color:var(--accent);margin-top:16px;">Thank you for using Muse</p>
+        <button class="btn-save" style="margin-top:20px;width:100%;" onclick="window.location.href='login.html'">Go to Login</button>
+    </div>
+</div>
+
 <footer class="footer-dashboard collapsed" id="footerDashboard">
     <div class="footer-handle" id="footerHandle"><div class="footer-handle-bar"></div></div>
     <div class="footer-paths">
@@ -137,7 +153,29 @@ function openPasswordModal() { document.getElementById('passwordModal').classLis
 function clearPasswordFields() { document.getElementById('currentPassword').value = ''; document.getElementById('newPassword').value = ''; document.getElementById('confirmPassword').value = ''; document.getElementById('passwordError').style.display = 'none'; }
 function changePassword() { var current = document.getElementById('currentPassword').value, newPass = document.getElementById('newPassword').value, confirm = document.getElementById('confirmPassword').value; var errorEl = document.getElementById('passwordError'); errorEl.style.display = 'none'; if (!current || !newPass || !confirm) { errorEl.textContent = 'All fields required'; errorEl.style.display = 'block'; return; } if (newPass.length < 4) { errorEl.textContent = 'Password must be at least 4 characters'; errorEl.style.display = 'block'; return; } if (newPass !== confirm) { errorEl.textContent = 'Passwords do not match'; errorEl.style.display = 'block'; return; } fetch(API_BASE + '/settings/password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id, currentPassword: current, newPassword: newPass }) }).then(function(r) { return r.json(); }).then(function(result) { if (result.success) { document.getElementById('passwordModal').classList.remove('active'); clearPasswordFields(); showToast('Password updated! 🔒'); } else { errorEl.textContent = result.error || 'Failed'; errorEl.style.display = 'block'; } }); }
 function openDeleteAccountModal() { document.getElementById('deleteAccountModal').classList.add('active'); document.getElementById('deleteConfirmInput').focus(); }
-function deleteAccount() { if (document.getElementById('deleteConfirmInput').value !== 'DELETE') return; fetch(API_BASE + '/account/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id }) }).then(function(r) { return r.json(); }).then(function(result) { if (result.success) { localStorage.removeItem('muse_user'); localStorage.removeItem('muse_settings'); showToast('Account deleted. Goodbye 👋'); setTimeout(function() { window.location.href = 'index.html'; }, 1500); } }); }
+function deleteAccount() {
+    if (document.getElementById('deleteConfirmInput').value !== 'DELETE') return;
+    var btn = document.getElementById('confirmDeleteAccountBtn');
+    btn.disabled = true; btn.textContent = 'Deleting...';
+    fetch(API_BASE + '/account/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id }) })
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+        if (result.success) {
+            localStorage.removeItem('muse_user');
+            localStorage.removeItem('muse_settings');
+            localStorage.removeItem('muse_remembered');
+            document.getElementById('deleteAccountModal').classList.remove('active');
+            document.getElementById('deleteSuccessOverlay').classList.add('active');
+        } else {
+            showToast(result.error || 'Failed to delete account');
+            btn.disabled = false; btn.textContent = 'Delete Forever';
+        }
+    })
+    .catch(function() {
+        showToast('Network error');
+        btn.disabled = false; btn.textContent = 'Delete Forever';
+    });
+}
 function clearLocalData() { if (confirm('Clear all local settings?')) { localStorage.removeItem('muse_settings'); document.getElementById('soundToggle').checked = true; showToast('Local data cleared 🧹'); } }
 function exportData() { var user = JSON.parse(localStorage.getItem('muse_user') || '{}'); var settings = JSON.parse(localStorage.getItem('muse_settings') || '{}'); var blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), user: user, settings: settings }, null, 2)], { type: 'application/json' }); var url = URL.createObjectURL(blob); var a = document.createElement('a'); a.href = url; a.download = 'muse_data_' + (user.tag_name || 'user') + '.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showToast('Data exported! 📥'); }
 function showToast(msg) { var t = document.getElementById('toast'); t.textContent = msg; t.style.opacity = '1'; setTimeout(function() { t.style.opacity = '0'; }, 3000); }

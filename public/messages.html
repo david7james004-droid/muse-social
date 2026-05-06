@@ -28,7 +28,7 @@
         .notification-dot { position: absolute; top: -4px; right: -4px; width: 8px; height: 8px; background: var(--danger); border-radius: 50%; display: none; }
         .notification-dot.has-unread { display: block; animation: blink 1s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        .conv-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s; }
+        .conv-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s; position: relative; }
         .conv-item:hover { background: rgba(173,216,230,0.05); }
         .conv-item.unread { background: rgba(173,216,230,0.08); }
         .conv-av { width: 48px; height: 48px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: bold; color: #000; font-size: 1.2rem; flex-shrink: 0; overflow: hidden; }
@@ -37,24 +37,38 @@
         .conv-name { color: var(--accent); font-weight: 600; font-size: 0.95rem; }
         .conv-last-msg { color: var(--text-muted); font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
         .unread-badge { background: var(--danger); color: #fff; border-radius: 50%; min-width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 600; }
+        .conv-delete-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: rgba(255,107,107,0.2); border: 1px solid var(--danger); color: var(--danger); padding: 6px 10px; border-radius: 12px; cursor: pointer; font-size: 0.7rem; opacity: 0; transition: opacity 0.2s; }
+        .conv-item:hover .conv-delete-btn { opacity: 1; }
         .chat-view { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); z-index: 400; max-width: 600px; margin: 0 auto; }
         .chat-view.active { display: flex; flex-direction: column; }
         .chat-header { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: var(--bg-dark); border-bottom: 1px solid rgba(255,255,255,0.1); height: 50px; }
         .chat-back-btn { background: none; border: none; color: var(--text); font-size: 1.5rem; cursor: pointer; }
         .chat-partner-name { color: var(--accent); font-weight: 600; font-size: 1rem; }
         .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
-        .msg-bubble { max-width: 75%; padding: 10px 14px; border-radius: 18px; font-size: 0.9rem; line-height: 1.4; word-wrap: break-word; animation: msgIn 0.2s ease; }
+        .msg-bubble { max-width: 75%; padding: 10px 14px; border-radius: 18px; font-size: 0.9rem; line-height: 1.4; word-wrap: break-word; animation: msgIn 0.2s ease; position: relative; }
         @keyframes msgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .msg-sent { align-self: flex-end; background: var(--accent); color: #000; border-bottom-right-radius: 4px; }
         .msg-received { align-self: flex-start; background: var(--bg-card); color: #fff; border-bottom-left-radius: 4px; }
         .msg-time { font-size: 0.6rem; opacity: 0.6; text-align: right; margin-top: 2px; }
-        .chat-input-bar { display: flex; gap: 8px; padding: 10px 12px; background: var(--bg-dark); border-top: 1px solid rgba(255,255,255,0.1); }
+        .msg-media { margin-top: 4px; }
+        .msg-media img, .msg-media video { max-width: 200px; max-height: 200px; border-radius: 8px; cursor: pointer; }
+        .msg-delete-btn { position: absolute; top: -6px; right: -6px; background: var(--danger); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 0.6rem; cursor: pointer; display: none; align-items: center; justify-content: center; }
+        .msg-bubble:hover .msg-delete-btn { display: flex; }
+        .chat-input-bar { display: flex; gap: 8px; padding: 10px 12px; background: var(--bg-dark); border-top: 1px solid rgba(255,255,255,0.1); align-items: center; }
         .chat-input { flex: 1; padding: 10px 16px; background: rgba(255,255,255,0.08); border: 2px solid #666; border-radius: 25px; color: #fff; font-size: 0.9rem; font-family: inherit; outline: none; }
         .chat-input:focus { border-color: var(--accent); }
         .chat-send-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: #000; border: none; cursor: pointer; font-size: 1.2rem; flex-shrink: 0; font-weight: bold; }
+        .chat-attach-btn { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff; cursor: pointer; font-size: 1rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .attach-preview-mini { display: none; padding: 8px 12px; background: rgba(0,0,0,0.3); border-top: 1px solid rgba(255,255,255,0.05); }
+        .attach-preview-mini img, .attach-preview-mini video { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; margin-right: 6px; }
+        .attach-preview-mini button { background: var(--danger); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 0.6rem; vertical-align: top; }
         .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
         .empty-state-icon { font-size: 3rem; margin-bottom: 12px; }
         .btn-primary { margin-top: 12px; padding: 10px 24px; background: var(--accent); color: #000; border: none; border-radius: 20px; cursor: pointer; font-weight: 600; font-family: inherit; }
+        .lightbox { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 600; align-items: center; justify-content: center; }
+        .lightbox.active { display: flex; }
+        .lightbox img, .lightbox video { max-width: 95vw; max-height: 90vh; object-fit: contain; border-radius: 8px; }
+        .lightbox-close { position: absolute; top: 16px; right: 24px; color: #fff; font-size: 2rem; cursor: pointer; background: none; border: none; }
         .footer-dashboard { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-darker); border-top: 2px solid var(--gold); z-index: 300; max-width: 600px; margin: 0 auto; transition: transform 0.3s ease; }
         .footer-dashboard.collapsed { transform: translateY(calc(100% - 44px)); }
         .footer-handle { text-align: center; padding: 6px; cursor: pointer; }
@@ -69,7 +83,6 @@
         .footer-muse-btn svg { width: 30px; height: 30px; }
         #toast { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 24px; border-radius: 20px; z-index: 9999; font-size: 0.9rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
         @media (max-width: 480px) { .footer-muse-btn { width: 46px; height: 46px; } .footer-muse-btn svg { width: 24px; height: 24px; } }
-        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 2px; }
     </style>
 </head>
 <body>
@@ -90,8 +103,16 @@
 <div class="chat-view" id="chatView">
     <div class="chat-header"><button class="chat-back-btn" id="chatBackBtn">←</button><div class="conv-av" style="width:36px;height:36px;font-size:1rem;" id="chatAv">?</div><div class="chat-partner-name" id="chatPartnerName">Chat</div></div>
     <div class="chat-messages" id="chatMessages"></div>
-    <div class="chat-input-bar"><input type="text" class="chat-input" id="chatInput" placeholder="Type a message..." maxlength="500"><button class="chat-send-btn" id="chatSendBtn">↑</button></div>
+    <div class="attach-preview-mini" id="attachPreviewMini"></div>
+    <div class="chat-input-bar">
+        <input type="file" id="chatMediaInput" accept="image/*,video/*" style="display:none;">
+        <button class="chat-attach-btn" id="chatAttachBtn" title="Send photo or video">📎</button>
+        <input type="text" class="chat-input" id="chatInput" placeholder="Type a message..." maxlength="500">
+        <button class="chat-send-btn" id="chatSendBtn">↑</button>
+    </div>
 </div>
+
+<div class="lightbox" id="lightbox"><button class="lightbox-close" onclick="closeLightbox()">✕</button><img id="lightboxImg" src="" style="display:none;"><video id="lightboxVideo" controls style="display:none;"></video></div>
 
 <footer class="footer-dashboard collapsed" id="footerDashboard">
     <div class="footer-handle" id="footerHandle"><div class="footer-handle-bar"></div></div>
@@ -110,14 +131,134 @@ var API_BASE = '/api';
 var currentUser = null;
 var currentChatFriend = null;
 var chatRefreshInterval = null;
-document.addEventListener('DOMContentLoaded', function() { var stored = localStorage.getItem('muse_user'); if (!stored) { window.location.href = 'index.html'; return; } currentUser = JSON.parse(stored); setupUI(); loadConversations(); checkUnread(); setInterval(checkUnread, 15000); var params = new URLSearchParams(window.location.search); var friendId = params.get('friend'); if (friendId) { setTimeout(function() { fetch(API_BASE+'/friends/'+currentUser.id).then(function(r){return r.json();}).then(function(result) { if (result.success) { var friend = result.friends.find(function(f) { return f.id === friendId; }); if (friend) openChat(friendId, friend.tag_name); } }); }, 500); } });
-function setupUI() { document.getElementById('museMenuBtn').addEventListener('click', function(e) { e.stopPropagation(); document.getElementById('dropdownMenu').classList.toggle('show'); }); document.addEventListener('click', function() { document.getElementById('dropdownMenu').classList.remove('show'); }); document.getElementById('chatBackBtn').addEventListener('click', closeChat); document.getElementById('chatSendBtn').addEventListener('click', sendMessage); document.getElementById('chatInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') sendMessage(); }); document.getElementById('footerHandle').addEventListener('click', function() { document.getElementById('footerDashboard').classList.toggle('collapsed'); }); var startY = 0; var footer = document.getElementById('footerDashboard'); footer.addEventListener('touchstart', function(e) { startY = e.touches[0].clientY; }); footer.addEventListener('touchmove', function(e) { var diff = startY - e.touches[0].clientY; if (diff > 30) footer.classList.remove('collapsed'); else if (diff < -30) footer.classList.add('collapsed'); }); }
+var chatMediaFile = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    var stored = localStorage.getItem('muse_user');
+    if (!stored) { window.location.href = 'index.html'; return; }
+    currentUser = JSON.parse(stored);
+    setupUI();
+    loadConversations();
+    checkUnread();
+    setInterval(checkUnread, 15000);
+    var params = new URLSearchParams(window.location.search);
+    var friendId = params.get('friend');
+    if (friendId) { setTimeout(function() { fetch(API_BASE+'/friends/'+currentUser.id).then(function(r){return r.json();}).then(function(result) { if (result.success) { var friend = result.friends.find(function(f) { return f.id === friendId; }); if (friend) openChat(friendId, friend.tag_name); } }); }, 500); }
+});
+
+function setupUI() {
+    document.getElementById('museMenuBtn').addEventListener('click', function(e) { e.stopPropagation(); document.getElementById('dropdownMenu').classList.toggle('show'); });
+    document.addEventListener('click', function() { document.getElementById('dropdownMenu').classList.remove('show'); });
+    document.getElementById('chatBackBtn').addEventListener('click', closeChat);
+    document.getElementById('chatSendBtn').addEventListener('click', sendMessage);
+    document.getElementById('chatInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') sendMessage(); });
+    document.getElementById('chatAttachBtn').addEventListener('click', function() { document.getElementById('chatMediaInput').click(); });
+    document.getElementById('chatMediaInput').addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            chatMediaFile = this.files[0];
+            var preview = document.getElementById('attachPreviewMini');
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                if (chatMediaFile.type.startsWith('video/')) {
+                    preview.innerHTML = '<video src="'+e.target.result+'" muted style="width:60px;height:60px;object-fit:cover;border-radius:6px;margin-right:6px;"></video><button onclick="clearMediaPreview()">✕</button>';
+                } else {
+                    preview.innerHTML = '<img src="'+e.target.result+'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;margin-right:6px;"><button onclick="clearMediaPreview()">✕</button>';
+                }
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(chatMediaFile);
+        }
+    });
+    document.getElementById('footerHandle').addEventListener('click', function() { document.getElementById('footerDashboard').classList.toggle('collapsed'); });
+    var startY = 0; var footer = document.getElementById('footerDashboard');
+    footer.addEventListener('touchstart', function(e) { startY = e.touches[0].clientY; });
+    footer.addEventListener('touchmove', function(e) { var diff = startY - e.touches[0].clientY; if (diff > 30) footer.classList.remove('collapsed'); else if (diff < -30) footer.classList.add('collapsed'); });
+}
+
+function clearMediaPreview() { chatMediaFile = null; document.getElementById('attachPreviewMini').style.display = 'none'; document.getElementById('attachPreviewMini').innerHTML = ''; document.getElementById('chatMediaInput').value = ''; }
+window.clearMediaPreview = clearMediaPreview;
+
 function checkUnread() { fetch(API_BASE+'/notifications/'+currentUser.id).then(function(r){return r.json();}).then(function(r){var d=document.getElementById('notifDot');if(r.unread>0){d.classList.add('has-unread');}else{d.classList.remove('has-unread');}}); }
-function loadConversations() { fetch(API_BASE+'/conversations/'+currentUser.id).then(function(r){return r.json();}).then(function(result) { var container = document.getElementById('convList'); if (result.success && result.conversations && result.conversations.length > 0) { container.innerHTML = result.conversations.map(function(c) { return '<div class="conv-item '+(c.unread>0?'unread':'')+'" onclick="openChat(\''+c.other_user_id+'\',\''+c.tag_name+'\')"><div class="conv-av">'+(c.avatar?'<img src="'+c.avatar+'" alt="'+c.tag_name+'">':(c.tag_name||'?')[0].toUpperCase())+'</div><div class="conv-info"><div class="conv-name">@'+c.tag_name+' '+(c.is_online?'<span style="color:#4CAF50;font-size:0.6rem;">●</span>':'')+'</div><div class="conv-last-msg">'+(c.last_message||'Start chatting')+'</div></div>'+(c.unread>0?'<div class="unread-badge">'+c.unread+'</div>':'')+'</div>'; }).join(''); } else { container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💬</div><h3>No conversations yet</h3><p>Add friends and start chatting!</p><button onclick="window.location.href=\'friends.html\'" class="btn-primary">Find Friends 👫</button></div>'; } }).catch(function() { document.getElementById('convList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>Cannot connect</h3><p>Make sure server is running</p><button onclick="loadConversations()" class="btn-primary">Retry</button></div>'; }); }
-function openChat(friendId, friendName) { currentChatFriend = { id: friendId, name: friendName }; document.getElementById('convList').style.display = 'none'; document.getElementById('chatView').classList.add('active'); document.getElementById('chatPartnerName').textContent = '@'+friendName; document.getElementById('chatAv').textContent = friendName[0].toUpperCase(); document.getElementById('chatInput').focus(); loadMessages(); chatRefreshInterval = setInterval(loadMessages, 3000); }
+
+function loadConversations() {
+    fetch(API_BASE+'/conversations/'+currentUser.id).then(function(r){return r.json();}).then(function(result) {
+        var container = document.getElementById('convList');
+        if (result.success && result.conversations && result.conversations.length > 0) {
+            container.innerHTML = result.conversations.map(function(c) {
+                return '<div class="conv-item '+(c.unread>0?'unread':'')+'" onclick="openChat(\''+c.other_user_id+'\',\''+c.tag_name+'\')"><div class="conv-av">'+(c.avatar?'<img src="'+c.avatar+'" alt="'+c.tag_name+'">':(c.tag_name||'?')[0].toUpperCase())+'</div><div class="conv-info"><div class="conv-name">@'+c.tag_name+' '+(c.is_online?'<span style="color:#4CAF50;font-size:0.6rem;">●</span>':'')+'</div><div class="conv-last-msg">'+(c.last_message||'Start chatting')+'</div></div>'+(c.unread>0?'<div class="unread-badge">'+c.unread+'</div>':'')+'<button class="conv-delete-btn" onclick="event.stopPropagation();deleteConversation(\''+c.other_user_id+'\')">🗑️</button></div>';
+            }).join('');
+        } else { container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💬</div><h3>No conversations yet</h3><p>Add friends and start chatting!</p><button onclick="window.location.href=\'friends.html\'" class="btn-primary">Find Friends 👫</button></div>'; }
+    }).catch(function() { document.getElementById('convList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>Cannot connect</h3><p>Make sure server is running</p><button onclick="loadConversations()" class="btn-primary">Retry</button></div>'; });
+}
+
+function openChat(friendId, friendName) {
+    currentChatFriend = { id: friendId, name: friendName };
+    document.getElementById('convList').style.display = 'none';
+    document.getElementById('chatView').classList.add('active');
+    document.getElementById('chatPartnerName').textContent = '@'+friendName;
+    document.getElementById('chatAv').textContent = friendName[0].toUpperCase();
+    document.getElementById('chatInput').focus();
+    loadMessages();
+    chatRefreshInterval = setInterval(loadMessages, 3000);
+}
+
 function closeChat() { document.getElementById('chatView').classList.remove('active'); document.getElementById('convList').style.display = 'block'; clearInterval(chatRefreshInterval); currentChatFriend = null; loadConversations(); }
-function loadMessages() { if (!currentChatFriend) return; fetch(API_BASE+'/messages/'+currentUser.id+'/'+currentChatFriend.id).then(function(r){return r.json();}).then(function(result) { var container = document.getElementById('chatMessages'); if (result.success && result.messages && result.messages.length > 0) { container.innerHTML = result.messages.map(function(m) { return '<div class="msg-bubble '+(m.sender_id===currentUser.id?'msg-sent':'msg-received')+'">'+m.text+'<div class="msg-time">'+formatTime(m.created_at)+'</div></div>'; }).join(''); } else { container.innerHTML = '<div style="text-align:center;color:#999;padding:40px;">No messages yet. Say hello! 👋</div>'; } container.scrollTop = container.scrollHeight; }); }
-function sendMessage() { var text = document.getElementById('chatInput').value.trim(); if (!text || !currentChatFriend) return; fetch(API_BASE+'/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senderId: currentUser.id, receiverId: currentChatFriend.id, text: text }) }).then(function(r){return r.json();}).then(function(result) { if (result.success) { document.getElementById('chatInput').value = ''; loadMessages(); } }); }
+
+function loadMessages() {
+    if (!currentChatFriend) return;
+    fetch(API_BASE+'/messages/'+currentUser.id+'/'+currentChatFriend.id).then(function(r){return r.json();}).then(function(result) {
+        var container = document.getElementById('chatMessages');
+        if (result.success && result.messages && result.messages.length > 0) {
+            container.innerHTML = result.messages.map(function(m) {
+                var mediaHTML = '';
+                if (m.media) {
+                    if (m.media_type === 'video') {
+                        mediaHTML = '<div class="msg-media"><video src="'+m.media+'" controls style="max-width:200px;max-height:200px;border-radius:8px;"></video></div>';
+                    } else if (m.media_type === 'image') {
+                        mediaHTML = '<div class="msg-media"><img src="'+m.media+'" style="max-width:200px;max-height:200px;border-radius:8px;cursor:pointer;" onclick="openLightbox(\''+m.media+'\',\''+(m.media_type||'image')+'\')"></div>';
+                    }
+                }
+                return '<div class="msg-bubble '+(m.sender_id===currentUser.id?'msg-sent':'msg-received')+'">'+m.text+mediaHTML+'<div class="msg-time">'+formatTime(m.created_at)+'</div><button class="msg-delete-btn" onclick="deleteMessage(\''+m.id+'\')">✕</button></div>';
+            }).join('');
+        } else { container.innerHTML = '<div style="text-align:center;color:#999;padding:40px;">No messages yet. Say hello! 👋</div>'; }
+        container.scrollTop = container.scrollHeight;
+    });
+}
+
+function sendMessage() {
+    var text = document.getElementById('chatInput').value.trim();
+    if ((!text && !chatMediaFile) || !currentChatFriend) return;
+
+    if (chatMediaFile) {
+        if (chatMediaFile.size > 50*1024*1024) { showToast('File must be under 50MB'); return; }
+        var formData = new FormData();
+        formData.append('senderId', currentUser.id);
+        formData.append('receiverId', currentChatFriend.id);
+        formData.append('text', text || '📎 Media');
+        if (chatMediaFile.type.startsWith('image/')) formData.append('image', chatMediaFile);
+        else formData.append('video', chatMediaFile);
+        fetch(API_BASE+'/messages', { method: 'POST', body: formData }).then(function(r){return r.json();}).then(function(result) {
+            if (result.success) { document.getElementById('chatInput').value = ''; clearMediaPreview(); loadMessages(); }
+        });
+    } else {
+        fetch(API_BASE+'/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senderId: currentUser.id, receiverId: currentChatFriend.id, text: text, media: '', media_type: '' }) }).then(function(r){return r.json();}).then(function(result) {
+            if (result.success) { document.getElementById('chatInput').value = ''; loadMessages(); }
+        });
+    }
+}
+
+function deleteMessage(msgId) {
+    if (!confirm('Delete this message?')) return;
+    fetch(API_BASE+'/messages/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id, messageId: msgId }) }).then(function(r){return r.json();}).then(function(result) { if (result.success) { loadMessages(); showToast('Message deleted'); } });
+}
+
+function deleteConversation(friendId) {
+    if (!confirm('Delete this entire conversation? This cannot be undone.')) return;
+    fetch(API_BASE+'/messages/delete-conversation', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id, friendId: friendId }) }).then(function(r){return r.json();}).then(function(result) { if (result.success) { loadConversations(); showToast('Conversation deleted'); } });
+}
+
+function openLightbox(src, type) { var lb = document.getElementById('lightbox'), img = document.getElementById('lightboxImg'), video = document.getElementById('lightboxVideo'); if (type === 'video') { img.style.display = 'none'; video.style.display = 'block'; video.src = src; video.play().catch(function() {}); } else { video.style.display = 'none'; video.src = ''; img.style.display = 'block'; img.src = src; } lb.classList.add('active'); }
+function closeLightbox() { document.getElementById('lightbox').classList.remove('active'); document.getElementById('lightboxVideo').src = ''; document.getElementById('lightboxVideo').style.display = 'none'; document.getElementById('lightboxImg').style.display = 'none'; }
 function formatTime(d) { if (!d) return ''; var date = new Date(d); var now = new Date(); if (date.toDateString() === now.toDateString()) return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); return date.toLocaleDateString([], { month: 'short', day: 'numeric' }); }
 function showToast(msg) { var t = document.getElementById('toast'); t.textContent = msg; t.style.opacity = '1'; setTimeout(function() { t.style.opacity = '0'; }, 3000); }
 </script>
