@@ -264,7 +264,25 @@ app.post('/api/messages', async (req, res) => {
         res.json({ success: true, message: msg });
     } catch (err) { res.json({ success: false, error: err.message }); }
 });
+// ==================== DELETE MESSAGE ====================
+app.post('/api/messages/delete', async (req, res) => {
+    try {
+        if (!db) return res.json({ success: false, error: 'Database not connected' });
+        const { userId, messageId } = req.body;
+        await col('messages').deleteOne({ id: messageId, sender_id: userId });
+        res.json({ success: true });
+    } catch (err) { res.json({ success: false, error: err.message }); }
+});
 
+// ==================== DELETE CONVERSATION ====================
+app.post('/api/messages/delete-conversation', async (req, res) => {
+    try {
+        if (!db) return res.json({ success: false, error: 'Database not connected' });
+        const { userId, friendId } = req.body;
+        await col('messages').deleteMany({ $or: [{ sender_id: userId, receiver_id: friendId }, { sender_id: friendId, receiver_id: userId }] });
+        res.json({ success: true });
+    } catch (err) { res.json({ success: false, error: err.message }); }
+});
 // ==================== PROFILE ====================
 app.get('/api/profile/:userId', async (req, res) => {
     try {
