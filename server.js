@@ -336,6 +336,11 @@ app.get('*', function(req, res) {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Delete event
+app.delete('/api/events/:eventId', async (req, res) => {
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId } = req.body; const event = await col('events').findOne({ id: req.params.eventId }); if (!event) return res.json({ success: false, error: 'Event not found' }); if (event.user_id !== userId) return res.json({ success: false, error: 'Not your event' }); await col('events').deleteOne({ id: req.params.eventId }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
 // ==================== START SERVER ====================
 async function startServer() {
     await connectDB();
