@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#808080">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>Wallet | Muse</title>
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <style>
+        :root { --bg: #808080; --bg-dark: #606060; --bg-darker: #404040; --bg-card: rgba(0,0,0,0.2); --text: #FFFFFF; --text-muted: #999999; --accent: #ADD8E6; --accent-hover: #9EC5D6; --gold: #FFD700; --danger: #FF6B6B; --success: #4CAF50; --radius: 16px; --radius-sm: 8px; --footer-height: 70px; --nav-height: 50px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; padding-bottom: calc(var(--footer-height) + 100px); }
+        .app-container { max-width: 600px; margin: 0 auto; min-height: 100vh; }
+        .top-nav { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-dark); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.1); height: var(--nav-height); }
+        .nav-left { position: relative; }
+        .muse-menu-btn { background: none; border: none; cursor: pointer; padding: 4px; }
+        .nav-logo-icon { width: 38px; height: 38px; filter: drop-shadow(0 0 8px rgba(255,215,0,0.6)); }
+        .dropdown-menu { display: none; position: absolute; top: 100%; left: 0; background: var(--bg-darker); border-radius: var(--radius-sm); min-width: 200px; max-height: 350px; overflow-y: auto; z-index: 200; box-shadow: 0 8px 32px rgba(0,0,0,0.4); list-style: none; }
+        .dropdown-menu.show { display: block; }
+        .dropdown-menu li a { display: block; padding: 10px 16px; color: var(--text); text-decoration: none; font-size: 0.9rem; transition: background 0.2s; }
+        .dropdown-menu li a:hover { background: var(--accent); color: #000; }
+        .nav-center .page-title { font-size: 1.1rem; font-weight: 600; color: var(--accent); letter-spacing: 1px; }
+        .nav-right { display: flex; gap: 12px; align-items: center; }
+        .nav-icon { text-decoration: none; font-size: 1.3rem; position: relative; }
+        .notification-dot { position: absolute; top: -4px; right: -4px; width: 8px; height: 8px; background: var(--danger); border-radius: 50%; display: none; }
+        .notification-dot.has-unread { display: block; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .balance-card { background: linear-gradient(135deg, #1a1a2e, #16213e); border: 2px solid rgba(255,215,0,0.3); border-radius: var(--radius); padding: 24px; margin: 16px; text-align: center; }
+        .balance-label { font-size: 0.7rem; color: #999; text-transform: uppercase; letter-spacing: 2px; }
+        .balance-amount { font-size: 3rem; font-weight: 700; color: #FFD700; margin: 8px 0; }
+        .send-section { padding: 0 16px; margin-bottom: 16px; }
+        .send-row { display: flex; gap: 8px; }
+        .send-input, .send-amount { padding: 10px 14px; background: rgba(255,255,255,0.08); border: 2px solid #666; border-radius: 25px; color: #fff; font-size: 0.9rem; font-family: inherit; outline: none; }
+        .send-input { flex: 1; }
+        .send-amount { width: 80px; text-align: center; }
+        .send-input:focus, .send-amount:focus { border-color: var(--accent); }
+        .btn-send { padding: 10px 20px; background: var(--gold); color: #000; border: none; border-radius: 25px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.9rem; white-space: nowrap; }
+        .earn-section { padding: 0 16px; margin-bottom: 16px; }
+        .earn-section h3 { color: var(--accent); font-size: 0.85rem; margin-bottom: 8px; }
+        .earn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .earn-card { background: var(--bg-card); border-radius: var(--radius-sm); padding: 12px; text-align: center; }
+        .earn-icon { font-size: 1.3rem; }
+        .earn-amount { font-weight: 700; color: var(--gold); font-size: 0.8rem; margin-top: 4px; }
+        .earn-desc { font-size: 0.6rem; color: var(--text-muted); margin-top: 2px; }
+        .tx-section { padding: 0 16px; }
+        .tx-section h3 { color: var(--accent); font-size: 0.85rem; margin-bottom: 8px; }
+        .tx-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--bg-card); border-radius: var(--radius-sm); margin-bottom: 4px; font-size: 0.8rem; }
+        .tx-info { flex: 1; }
+        .tx-desc { color: #ddd; }
+        .tx-date { font-size: 0.65rem; color: var(--text-muted); }
+        .tx-amount { font-weight: 700; }
+        .tx-positive { color: var(--success); }
+        .tx-negative { color: var(--danger); }
+        .footer-dashboard { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-darker); border-top: 2px solid var(--gold); z-index: 300; max-width: 600px; margin: 0 auto; transition: transform 0.3s ease; }
+        .footer-dashboard.collapsed { transform: translateY(calc(100% - 44px)); }
+        .footer-handle { text-align: center; padding: 6px; cursor: pointer; }
+        .footer-handle-bar { display: inline-block; width: 40px; height: 4px; background: var(--text-muted); border-radius: 2px; }
+        .footer-paths { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px 12px; gap: 4px; }
+        .footer-path { display: flex; flex-direction: column; align-items: center; gap: 2px; text-decoration: none; color: var(--text-muted); font-size: 0.65rem; padding: 6px 8px; border-radius: var(--radius-sm); transition: all 0.2s; min-width: 50px; }
+        .footer-path:hover, .footer-path.active { color: var(--accent); background: rgba(173,216,230,0.1); }
+        .footer-path-icon { font-size: 1.3rem; }
+        .footer-path-label { font-size: 0.6rem; text-align: center; }
+        .footer-muse-btn { width: 56px; height: 56px; border-radius: 50%; background: #000; border: 3px solid var(--gold); cursor: pointer; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 0 10px rgba(255,215,0,0.5)); flex-shrink: 0; margin: 0 6px; padding: 0; }
+        .footer-muse-btn:hover { transform: scale(1.1); filter: drop-shadow(0 0 20px rgba(255,215,0,0.8)); }
+        .footer-muse-btn svg { width: 30px; height: 30px; }
+        #toast { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 24px; border-radius: 20px; z-index: 9999; font-size: 0.9rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+        @media (max-width: 480px) { .footer-muse-btn { width: 46px; height: 46px; } .footer-muse-btn svg { width: 24px; height: 24px; } }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <header class="top-nav">
+        <div class="nav-left">
+            <button class="muse-menu-btn" id="museMenuBtn"><svg viewBox="0 0 40 40" class="nav-logo-icon"><circle cx="20" cy="20" r="18" fill="#000" stroke="#FFD700" stroke-width="1.5"/><text x="20" y="26" text-anchor="middle" font-family="Arial" font-weight="300" font-size="20" fill="#ADD8E6">M</text></svg></button>
+            <ul class="dropdown-menu" id="dropdownMenu">
+                <li><a href="centre.html">🏠 Centre</a></li><li><a href="hot.html">🔥 Hot</a></li><li><a href="profile.html">👤 Profile</a></li><li><a href="friends.html">👫 Friends</a></li><li><a href="messages.html">💬 Messages</a></li><li><a href="notifications.html">🔔 Notifications</a></li><li><a href="slideshow.html">🎞️ Slideshow</a></li><li><a href="wallet.html">💰 Wallet</a></li><li><a href="groups.html">👥 Groups</a></li><li><a href="events.html">🎫 Events</a></li><li><a href="polls.html">📊 Polls</a></li><li><a href="stories.html">📖 Stories</a></li><li><a href="search.html">🔍 Search</a></li><li><a href="media-uploads.html">📷 Uploads</a></li><li><a href="settings.html">⚙️ Settings</a></li>
+            </ul>
+        </div>
+        <div class="nav-center"><h1 class="page-title">💰 Wallet</h1></div>
+        <div class="nav-right"><a href="messages.html" class="nav-icon" id="msgIcon">💬<span class="notification-dot" id="msgDot"></span></a><a href="notifications.html" class="nav-icon" id="notifIcon">🔔<span class="notification-dot" id="notifDot"></span></a></div>
+    </header>
+
+    <div class="balance-card"><div class="balance-label">Muse Coins Balance</div><div class="balance-amount" id="balanceDisplay">0</div></div>
+
+    <div class="send-section"><div class="send-row"><input type="text" class="send-input" id="sendToInput" placeholder="Tag name..."><input type="number" class="send-amount" id="sendAmountInput" placeholder="Amt" min="1"><button class="btn-send" id="sendCoinsBtn">Send</button></div></div>
+
+    <div class="earn-section"><h3>💰 How to Earn</h3><div class="earn-grid">
+        <div class="earn-card"><div class="earn-icon">📝</div><div class="earn-amount">+5</div><div class="earn-desc">Create Post</div></div>
+        <div class="earn-card"><div class="earn-icon">💬</div><div class="earn-amount">+2</div><div class="earn-desc">Comment</div></div>
+        <div class="earn-card"><div class="earn-icon">❤️</div><div class="earn-amount">+1</div><div class="earn-desc">Like</div></div>
+        <div class="earn-card"><div class="earn-icon">👫</div><div class="earn-amount">+5</div><div class="earn-desc">Add Friend</div></div>
+        <div class="earn-card"><div class="earn-icon">📖</div><div class="earn-amount">+3</div><div class="earn-desc">Post Story</div></div>
+        <div class="earn-card"><div class="earn-icon">🎥</div><div class="earn-amount">+10</div><div class="earn-desc">Go Live</div></div>
+    </div></div>
+
+    <div class="tx-section"><h3>📋 Transaction History</h3><div id="txList"><div style="text-align:center;color:var(--text-muted);padding:20px;">Loading...</div></div></div>
+</div>
+
+<footer class="footer-dashboard collapsed" id="footerDashboard">
+    <div class="footer-handle" id="footerHandle"><div class="footer-handle-bar"></div></div>
+    <div class="footer-paths">
+        <a href="profile.html" class="footer-path"><span class="footer-path-icon">👤</span><span class="footer-path-label">Profile</span></a>
+        <a href="media-uploads.html" class="footer-path"><span class="footer-path-icon">📷</span><span class="footer-path-label">Uploads</span></a>
+        <button class="footer-muse-btn" onclick="window.location.href='centre.html'"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="#000" stroke="#FFD700" stroke-width="2"/><text x="20" y="27" text-anchor="middle" font-family="Arial" font-weight="300" font-size="22" fill="#ADD8E6">M</text></svg></button>
+        <a href="friends.html" class="footer-path"><span class="footer-path-icon">👫</span><span class="footer-path-label">Friends</span></a>
+        <a href="slideshow.html" class="footer-path"><span class="footer-path-icon">🎞️</span><span class="footer-path-label">Slideshow</span></a>
+    </div>
+</footer>
+<div id="toast"></div>
+
+<script>
+var API_BASE = '/api';
+var currentUser = null;
+document.addEventListener('DOMContentLoaded', function() {
+    var stored = localStorage.getItem('muse_user');
+    if (!stored) { window.location.href = 'index.html'; return; }
+    currentUser = JSON.parse(stored);
+    setupUI();
+    loadWallet();
+    checkUnread();
+    setInterval(checkUnread, 15000);
+    document.getElementById('sendCoinsBtn').addEventListener('click', sendCoins);
+});
+function setupUI() {
+    document.getElementById('museMenuBtn').addEventListener('click', function(e) { e.stopPropagation(); document.getElementById('dropdownMenu').classList.toggle('show'); });
+    document.addEventListener('click', function() { document.getElementById('dropdownMenu').classList.remove('show'); });
+    document.getElementById('footerHandle').addEventListener('click', function() { document.getElementById('footerDashboard').classList.toggle('collapsed'); });
+    var startY = 0, footer = document.getElementById('footerDashboard');
+    footer.addEventListener('touchstart', function(e) { startY = e.touches[0].clientY; });
+    footer.addEventListener('touchmove', function(e) { var diff = startY - e.touches[0].clientY; if (diff > 30) footer.classList.remove('collapsed'); else if (diff < -30) footer.classList.add('collapsed'); });
+}
+function checkUnread() { fetch(API_BASE+'/notifications/'+currentUser.id).then(function(r){return r.json();}).then(function(r){var d=document.getElementById('notifDot');if(r.unread>0)d.classList.add('has-unread');else d.classList.remove('has-unread');}); fetch(API_BASE+'/conversations/'+currentUser.id).then(function(r){return r.json();}).then(function(r){var d=document.getElementById('msgDot');if(r.success&&r.conversations){var t=r.conversations.reduce(function(s,c){return s+(c.unread||0);},0);if(t>0)d.classList.add('has-unread');else d.classList.remove('has-unread');}}); }
+function loadWallet() {
+    fetch(API_BASE + '/wallet/' + currentUser.id).then(function(r) { return r.json(); }).then(function(result) {
+        if (result.success) {
+            document.getElementById('balanceDisplay').textContent = (result.balance || 0).toLocaleString();
+            var txList = document.getElementById('txList');
+            if (result.transactions && result.transactions.length) {
+                txList.innerHTML = result.transactions.slice(0, 30).map(function(tx) {
+                    return '<div class="tx-item"><div class="tx-info"><div class="tx-desc">'+escHtml(tx.description||'Transaction')+'</div><div class="tx-date">'+timeAgo(tx.created_at)+'</div></div><span class="tx-amount '+(tx.amount>=0?'tx-positive':'tx-negative')+'">'+(tx.amount>=0?'+':'')+tx.amount+' 🪙</span></div>';
+                }).join('');
+            } else { txList.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;">No transactions yet</div>'; }
+        }
+    });
+}
+function sendCoins() {
+    var toTag = document.getElementById('sendToInput').value.trim();
+    var amount = parseInt(document.getElementById('sendAmountInput').value);
+    if (!toTag || !amount || amount < 1) { showToast('Enter tag name and amount'); return; }
+    fetch(API_BASE + '/wallet/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fromUserId: currentUser.id, toTagName: toTag, amount: amount }) })
+    .then(function(r) { return r.json(); }).then(function(result) {
+        if (result.success) { document.getElementById('sendToInput').value = ''; document.getElementById('sendAmountInput').value = ''; loadWallet(); showToast('Sent '+amount+'🪙 to @'+toTag+'!'); }
+        else { showToast(result.error || 'Failed'); }
+    });
+}
+function timeAgo(d) { if(!d) return ''; var s = Math.floor((new Date() - new Date(d)) / 1000); if(s<60) return 'just now'; if(s<3600) return Math.floor(s/60)+'m ago'; if(s<86400) return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
+function escHtml(t) { if(!t) return ''; var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+function showToast(msg) { var t=document.getElementById('toast'); t.textContent=msg; t.style.opacity='1'; setTimeout(function(){t.style.opacity='0';},3000); }
+</script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#808080">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>Stories | Muse</title>
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <style>
+        :root { --bg: #808080; --bg-dark: #606060; --bg-darker: #404040; --bg-card: rgba(0,0,0,0.2); --text: #FFFFFF; --text-muted: #999999; --accent: #ADD8E6; --gold: #FFD700; --danger: #FF6B6B; --success: #4CAF50; --radius: 16px; --radius-sm: 8px; --footer-height: 70px; --nav-height: 50px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; padding-bottom: calc(var(--footer-height) + 100px); }
+        .app-container { max-width: 600px; margin: 0 auto; min-height: 100vh; }
+        .top-nav { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-dark); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.1); height: var(--nav-height); }
+        .nav-left { position: relative; }
+        .muse-menu-btn { background: none; border: none; cursor: pointer; padding: 4px; }
+        .nav-logo-icon { width: 38px; height: 38px; filter: drop-shadow(0 0 8px rgba(255,215,0,0.6)); }
+        .dropdown-menu { display: none; position: absolute; top: 100%; left: 0; background: var(--bg-darker); border-radius: var(--radius-sm); min-width: 200px; max-height: 350px; overflow-y: auto; z-index: 200; box-shadow: 0 8px 32px rgba(0,0,0,0.4); list-style: none; }
+        .dropdown-menu.show { display: block; }
+        .dropdown-menu li a { display: block; padding: 10px 16px; color: var(--text); text-decoration: none; font-size: 0.9rem; transition: background 0.2s; }
+        .dropdown-menu li a:hover { background: var(--accent); color: #000; }
+        .nav-center .page-title { font-size: 1.1rem; font-weight: 600; color: var(--accent); letter-spacing: 1px; }
+        .nav-right { display: flex; gap: 12px; align-items: center; }
+        .nav-icon { text-decoration: none; font-size: 1.3rem; position: relative; }
+        .notification-dot { position: absolute; top: -4px; right: -4px; width: 8px; height: 8px; background: var(--danger); border-radius: 50%; display: none; }
+        .notification-dot.has-unread { display: block; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .create-btns { display: flex; gap: 8px; padding: 12px 16px; }
+        .create-btn { flex: 1; padding: 14px; border: 2px dashed rgba(255,255,255,0.2); border-radius: 14px; background: rgba(0,0,0,0.1); color: #fff; cursor: pointer; text-align: center; font-size: 0.8rem; font-family: inherit; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .create-btn:hover { border-color: var(--accent); background: rgba(173,216,230,0.08); }
+        .create-btn span { font-size: 1.5rem; }
+        .story-grid { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px; }
+        .story-card { width: calc(33.33% - 6px); aspect-ratio: 9/16; background: rgba(0,0,0,0.15); border-radius: 12px; overflow: hidden; cursor: pointer; position: relative; border: 1px solid rgba(255,255,255,0.04); }
+        .story-card img, .story-card video { width: 100%; height: 100%; object-fit: cover; }
+        .story-card-text { display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg,#ADD8E6,#FF6B8A); color: #fff; font-size: 0.85rem; text-align: center; height: 100%; padding: 8px; }
+        .story-card-user { position: absolute; bottom: 6px; left: 6px; color: #fff; font-size: 0.6rem; background: rgba(0,0,0,0.6); padding: 2px 8px; border-radius: 10px; }
+        .story-card-time { position: absolute; bottom: 6px; right: 6px; color: #fff; font-size: 0.55rem; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 8px; }
+        .footer-dashboard { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-darker); border-top: 2px solid var(--gold); z-index: 300; max-width: 600px; margin: 0 auto; transition: transform 0.3s ease; }
+        .footer-dashboard.collapsed { transform: translateY(calc(100% - 44px)); }
+        .footer-handle { text-align: center; padding: 6px; cursor: pointer; }
+        .footer-handle-bar { display: inline-block; width: 40px; height: 4px; background: var(--text-muted); border-radius: 2px; }
+        .footer-paths { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px 12px; gap: 4px; }
+        .footer-path { display: flex; flex-direction: column; align-items: center; gap: 2px; text-decoration: none; color: var(--text-muted); font-size: 0.65rem; padding: 6px 8px; border-radius: var(--radius-sm); transition: all 0.2s; min-width: 50px; }
+        .footer-path:hover, .footer-path.active { color: var(--accent); background: rgba(173,216,230,0.1); }
+        .footer-path-icon { font-size: 1.3rem; }
+        .footer-path-label { font-size: 0.6rem; text-align: center; }
+        .footer-muse-btn { width: 56px; height: 56px; border-radius: 50%; background: #000; border: 3px solid var(--gold); cursor: pointer; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 0 10px rgba(255,215,0,0.5)); flex-shrink: 0; margin: 0 6px; padding: 0; }
+        .footer-muse-btn:hover { transform: scale(1.1); }
+        .footer-muse-btn svg { width: 30px; height: 30px; }
+        #toast { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 24px; border-radius: 20px; z-index: 9999; font-size: 0.9rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+        @media (max-width: 480px) { .footer-muse-btn { width: 46px; height: 46px; } .footer-muse-btn svg { width: 24px; height: 24px; } }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <header class="top-nav">
+        <div class="nav-left">
+            <button class="muse-menu-btn" id="museMenuBtn"><svg viewBox="0 0 40 40" class="nav-logo-icon"><circle cx="20" cy="20" r="18" fill="#000" stroke="#FFD700" stroke-width="1.5"/><text x="20" y="26" text-anchor="middle" font-family="Arial" font-weight="300" font-size="20" fill="#ADD8E6">M</text></svg></button>
+            <ul class="dropdown-menu" id="dropdownMenu">
+                <li><a href="centre.html">🏠 Centre</a></li><li><a href="hot.html">🔥 Hot</a></li><li><a href="profile.html">👤 Profile</a></li><li><a href="friends.html">👫 Friends</a></li><li><a href="messages.html">💬 Messages</a></li><li><a href="notifications.html">🔔 Notifications</a></li><li><a href="slideshow.html">🎞️ Slideshow</a></li><li><a href="wallet.html">💰 Wallet</a></li><li><a href="groups.html">👥 Groups</a></li><li><a href="events.html">🎫 Events</a></li><li><a href="polls.html">📊 Polls</a></li><li><a href="stories.html">📖 Stories</a></li><li><a href="search.html">🔍 Search</a></li><li><a href="media-uploads.html">📷 Uploads</a></li><li><a href="settings.html">⚙️ Settings</a></li>
+            </ul>
+        </div>
+        <div class="nav-center"><h1 class="page-title">📖 Stories</h1></div>
+        <div class="nav-right"><a href="messages.html" class="nav-icon" id="msgIcon">💬<span class="notification-dot" id="msgDot"></span></a><a href="notifications.html" class="nav-icon" id="notifIcon">🔔<span class="notification-dot" id="notifDot"></span></a></div>
+    </header>
+
+    <div class="create-btns">
+        <button class="create-btn" id="btnPhotoStory"><span>🖼️</span> Photo</button>
+        <button class="create-btn" id="btnTextStory"><span>📝</span> Text</button>
+    </div>
+    <input type="file" id="photoInput" accept="image/*" style="display:none;">
+    
+    <h3 style="color:var(--accent);padding:0 16px;font-size:0.9rem;">Active Stories</h3>
+    <div class="story-grid" id="storyGrid"><div style="width:100%;text-align:center;color:var(--text-muted);padding:40px;">Loading stories...</div></div>
+</div>
+
+<footer class="footer-dashboard collapsed" id="footerDashboard">
+    <div class="footer-handle" id="footerHandle"><div class="footer-handle-bar"></div></div>
+    <div class="footer-paths">
+        <a href="profile.html" class="footer-path"><span class="footer-path-icon">👤</span><span class="footer-path-label">Profile</span></a>
+        <a href="media-uploads.html" class="footer-path"><span class="footer-path-icon">📷</span><span class="footer-path-label">Uploads</span></a>
+        <button class="footer-muse-btn" onclick="window.location.href='centre.html'"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="#000" stroke="#FFD700" stroke-width="2"/><text x="20" y="27" text-anchor="middle" font-family="Arial" font-weight="300" font-size="22" fill="#ADD8E6">M</text></svg></button>
+        <a href="friends.html" class="footer-path"><span class="footer-path-icon">👫</span><span class="footer-path-label">Friends</span></a>
+        <a href="slideshow.html" class="footer-path"><span class="footer-path-icon">🎞️</span><span class="footer-path-label">Slideshow</span></a>
+    </div>
+</footer>
+<div id="toast"></div>
+
+<script>
+var API_BASE = '/api';
+var currentUser = null;
+document.addEventListener('DOMContentLoaded', function() {
+    var stored = localStorage.getItem('muse_user');
+    if (!stored) { window.location.href = 'index.html'; return; }
+    currentUser = JSON.parse(stored);
+    setupUI();
+    loadStories();
+    checkUnread();
+    setInterval(checkUnread, 15000);
+});
+function setupUI() {
+    document.getElementById('museMenuBtn').addEventListener('click', function(e) { e.stopPropagation(); document.getElementById('dropdownMenu').classList.toggle('show'); });
+    document.addEventListener('click', function() { document.getElementById('dropdownMenu').classList.remove('show'); });
+    document.getElementById('btnPhotoStory').addEventListener('click', function() { document.getElementById('photoInput').click(); });
+    document.getElementById('btnTextStory').addEventListener('click', function() { var text = prompt('Write your story text (disappears in 24 hours):'); if (text && text.trim()) { postStory('text', text.trim(), ''); } });
+    document.getElementById('photoInput').addEventListener('change', function() {
+        var file = this.files[0]; if (!file) return;
+        if (file.size > 10*1024*1024) { showToast('Image must be under 10MB'); return; }
+        var formData = new FormData(); formData.append('userId', currentUser.id); formData.append('story', file);
+        fetch(API_BASE + '/stories', { method: 'POST', body: formData }).then(function(r){return r.json();}).then(function(result) { if (result.success) { loadStories(); showToast('Story posted! 📖'); } });
+        this.value = '';
+    });
+    document.getElementById('footerHandle').addEventListener('click', function() { document.getElementById('footerDashboard').classList.toggle('collapsed'); });
+    var startY = 0, footer = document.getElementById('footerDashboard');
+    footer.addEventListener('touchstart', function(e) { startY = e.touches[0].clientY; });
+    footer.addEventListener('touchmove', function(e) { var diff = startY - e.touches[0].clientY; if (diff > 30) footer.classList.remove('collapsed'); else if (diff < -30) footer.classList.add('collapsed'); });
+}
+function checkUnread() { fetch(API_BASE+'/notifications/'+currentUser.id).then(function(r){return r.json();}).then(function(r){var d=document.getElementById('notifDot');if(r.unread>0)d.classList.add('has-unread');else d.classList.remove('has-unread');}); fetch(API_BASE+'/conversations/'+currentUser.id).then(function(r){return r.json();}).then(function(r){var d=document.getElementById('msgDot');if(r.success&&r.conversations){var t=r.conversations.reduce(function(s,c){return s+(c.unread||0);},0);if(t>0)d.classList.add('has-unread');else d.classList.remove('has-unread');}}); }
+function loadStories() {
+    fetch(API_BASE + '/stories/' + currentUser.id).then(function(r) { return r.json(); }).then(function(result) {
+        var grid = document.getElementById('storyGrid');
+        if (result.success && result.stories && result.stories.length) {
+            var now = Date.now();
+            var active = result.stories.filter(function(s) { return (now - new Date(s.created_at).getTime()) < 86400000; });
+            if (!active.length) { grid.innerHTML = '<div style="width:100%;text-align:center;color:var(--text-muted);padding:40px;">No active stories</div>'; return; }
+            grid.innerHTML = active.map(function(s) {
+                var remaining = 86400000 - (now - new Date(s.created_at).getTime());
+                var hrs = Math.floor(remaining / 3600000);
+                var timeLeft = hrs <= 0 ? 'Expiring' : hrs < 1 ? '<1h' : hrs+'h left';
+                var isOwn = s.user_id === currentUser.id;
+                var content = s.media_type === 'image' ? '<img src="'+s.media+'" alt="Story">' : '<div class="story-card-text">'+escHtml((s.text||'').substring(0,100))+'</div>';
+                return '<div class="story-card">'+content+'<div class="story-card-user">'+(isOwn?'You':'@'+escHtml((s.tag_name||'').substring(0,8)))+'</div><div class="story-card-time">'+timeLeft+'</div></div>';
+            }).join('');
+        } else { grid.innerHTML = '<div style="width:100%;text-align:center;color:var(--text-muted);padding:40px;">No stories yet</div>'; }
+    });
+}
+function postStory(type, text, media) {
+    fetch(API_BASE + '/stories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id, type: type, text: text }) })
+    .then(function(r) { return r.json(); }).then(function(result) { if (result.success) { loadStories(); showToast('Story posted!'); } });
+}
+function escHtml(t) { if(!t) return ''; var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+function showToast(msg) { var t=document.getElementById('toast'); t.textContent=msg; t.style.opacity='1'; setTimeout(function(){t.style.opacity='0';},3000); }
+</script>
+</body>
+</html>

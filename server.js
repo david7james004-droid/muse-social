@@ -1,11 +1,3 @@
-/*
- * Muse Social Media - Server
- * Copyright © 2026 Amusement Inc.
- * All Rights Reserved. Proprietary and Confidential.
- * Unauthorized copying, distribution, or use is strictly prohibited.
- * Owner: David James - david7james004@gmail.com
- */
-
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
@@ -142,16 +134,7 @@ app.post('/api/posts', upload.fields([{ name: 'image', maxCount: 4 }, { name: 'v
 });
 
 app.post('/api/posts/delete', async (req, res) => {
-    try {
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const { userId, postId } = req.body;
-        const result = await col('posts').deleteOne({ id: postId, user_id: userId });
-        if (result.deletedCount === 0) return res.json({ success: false, error: 'Post not found or not yours' });
-        await col('likes').deleteMany({ post_id: postId });
-        await col('comments').deleteMany({ post_id: postId });
-        await col('bookmarks').deleteMany({ post_id: postId });
-        res.json({ success: true });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, postId } = req.body; const result = await col('posts').deleteOne({ id: postId, user_id: userId }); if (result.deletedCount === 0) return res.json({ success: false, error: 'Post not found or not yours' }); await col('likes').deleteMany({ post_id: postId }); await col('comments').deleteMany({ post_id: postId }); await col('bookmarks').deleteMany({ post_id: postId }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 // ==================== LIKES ====================
@@ -226,12 +209,10 @@ app.get('/api/conversations/:userId', async (req, res) => {
     try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const userId = req.params.userId; const msgs = await col('messages').find({ $or: [{ sender_id: userId }, { receiver_id: userId }] }).toArray(); const involved = {}; msgs.forEach(m => { if (m.sender_id === userId) involved[m.receiver_id] = true; if (m.receiver_id === userId) involved[m.sender_id] = true; }); const conversations = []; for (let otherId of Object.keys(involved)) { const u = await col('users').findOne({ id: otherId }); const lastMsg = await col('messages').findOne({ $or: [{ sender_id: userId, receiver_id: otherId }, { sender_id: otherId, receiver_id: userId }] }, { sort: { created_at: -1 } }); const unread = await col('messages').countDocuments({ receiver_id: userId, sender_id: otherId, is_read: false }); conversations.push({ other_user_id: otherId, tag_name: u ? u.tag_name : '?', avatar: u ? u.avatar || '' : '', is_online: u ? u.is_online : 0, last_message: lastMsg ? (lastMsg.media ? '📎 Media' : lastMsg.text) : 'Start chatting', unread }); } conversations.sort((a, b) => { const aM = msgs.filter(m => (m.sender_id===userId&&m.receiver_id===a.other_user_id)||(m.sender_id===a.other_user_id&&m.receiver_id===userId)).sort((x,y)=>new Date(y.created_at)-new Date(x.created_at))[0]; const bM = msgs.filter(m => (m.sender_id===userId&&m.receiver_id===b.other_user_id)||(m.sender_id===b.other_user_id&&m.receiver_id===userId)).sort((x,y)=>new Date(y.created_at)-new Date(x.created_at))[0]; if(!aM)return 1;if(!bM)return -1;return new Date(bM.created_at)-new Date(aM.created_at); }); res.json({ success: true, conversations }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// ==================== DELETE MESSAGE ====================
 app.post('/api/messages/delete', async (req, res) => {
     try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, messageId } = req.body; await col('messages').deleteOne({ id: messageId, sender_id: userId }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// ==================== DELETE CONVERSATION ====================
 app.post('/api/messages/delete-conversation', async (req, res) => {
     try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, friendId } = req.body; await col('messages').deleteMany({ $or: [{ sender_id: userId, receiver_id: friendId }, { sender_id: friendId, receiver_id: userId }] }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
@@ -264,6 +245,83 @@ app.post('/api/bookmarks', async (req, res) => {
     try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, postId } = req.body; const existing = await col('bookmarks').findOne({ user_id: userId, post_id: postId }); if (existing) { await col('bookmarks').deleteOne({ user_id: userId, post_id: postId }); return res.json({ success: true, bookmarked: false }); } await col('bookmarks').insertOne({ user_id: userId, post_id: postId, created_at: new Date().toISOString() }); res.json({ success: true, bookmarked: true }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
+// ==================== WALLET ====================
+app.get('/api/wallet/:userId', async (req, res) => {
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const user = await col('users').findOne({ id: req.params.userId }); const transactions = await col('wallet_transactions').find({ user_id: req.params.userId }).sort({ created_at: -1 }).limit(50).toArray(); res.json({ success: true, balance: user ? (user.muse_coins || 0) : 0, transactions }); } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+app.post('/api/wallet/send', async (req, res) => {
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { fromUserId, toTagName, amount } = req.body; const amt = parseInt(amount); const sender = await col('users').findOne({ id: fromUserId }); if (!sender || (sender.muse_coins || 0) < amt) return res.json({ success: false, error: 'Insufficient coins' }); const receiver = await col('users').findOne({ tag_name: toTagName }); if (!receiver) return res.json({ success: false, error: 'User not found' }); await col('users').updateOne({ id: fromUserId }, { $inc: { muse_coins: -amt } }); await col('users').updateOne({ id: receiver.id }, { $inc: { muse_coins: amt } }); await col('wallet_transactions').insertOne({ id: uuidv4(), user_id: fromUserId, amount: -amt, type: 'send', description: 'Sent to ' + receiver.tag_name, created_at: new Date().toISOString() }); await col('wallet_transactions').insertOne({ id: uuidv4(), user_id: receiver.id, amount: amt, type: 'receive', description: 'Received from ' + sender.tag_name, created_at: new Date().toISOString() }); res.json({ success: true, newBalance: (sender.muse_coins || 0) - amt }); } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+// ==================== STORIES ====================
+app.post('/api/stories', upload.single('story'), async (req, res) => {
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId } = req.body; const story = { id: uuidv4(), user_id: userId, media: '/uploads/stories/' + req.file.filename, media_type: 'image', text: '', created_at: new Date().toISOString(), expires_at: new Date(Date.now() + 86400000).toISOString() }; await col('stories').insertOne(story); res.json({ success: true, story }); } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+app.get('/api/stories/:userId', async (req, res) => {
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const now = new Date(); const friendIds = [req.params.userId]; const friends = await col('friends').find({ $or: [{ user_id: req.params.userId }, { friend_id: req.params.userId }], status: 'accepted' }).toArray(); friends.forEach(f => friendIds.push(f.user_id === req.params.userId ? f.friend_id : f.user_id)); const stories = await col('stories').find({ user_id: { $in: friendIds }, expires_at: { $gt: now.toISOString() } }).sort({ created_at: -1 }).toArray(); for (let s of stories) { const u = await col('users').findOne({ id: s.user_id }); s.tag_name = u ? u.tag_name : 'unknown'; } res.json({ success: true, stories }); } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+// ==================== GROUPS ====================
+app.get('/api/groups', async (req, res) => {
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const groups = await col('groups').find({}).sort({ created_at: -1 }).toArray(); for (let g of groups) { const creator = await col('users').findOne({ id: g.creator_id }); g.creator_name = creator ? creator.tag_name : 'unknown'; g.member_count = g.members ? g.members.length : 0; } res.json({ success: true, groups }); } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+app.post('/api/groups', async (req, res) => {
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, name, description, privacy } = req.body; const group = { id: uuidv4(), creator_id: userId, name, description: description || '', privacy: privacy || 'public', members: [userId], created_at: new Date().toISOString() }; await col('groups').insertOne(group); res.json({ success: true, group }); } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+app.get('/api/groups/:groupId/messages', async (req, res) => {
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const messages = await col('group_messages').find({ group_id: req.params.groupId }).sort({ created_at: 1 }).limit(100).toArray(); for (let m of messages) { const u = await col('users').findOne({ id: m.sender_id }); m.sender_name = u ? u.tag_name : 'unknown'; } res.json({ success: true, messages }); } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+app.post('/api/groups/:groupId/messages', async (req, res) => {
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, text } = req.body; const msg = { id: uuidv4(), group_id: req.params.groupId, sender_id: userId, text, created_at: new Date().toISOString() }; await col('group_messages').insertOne(msg); res.json({ success: true, message: msg }); } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+app.post('/api/groups/:groupId/leave', async (req, res) => {
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId } = req.body; await col('groups').updateOne({ id: req.params.groupId }, { $pull: { members: userId } }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+// ==================== EVENTS ====================
+app.get('/api/events', async (req, res) => {
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const events = await col('events').find({}).sort({ event_date: 1 }).toArray(); for (let e of events) { const u = await col('users').findOne({ id: e.user_id }); e.tag_name = u ? u.tag_name : 'unknown'; e.attendees = e.attendees || []; } res.json({ success: true, events }); } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+app.post('/api/events', async (req, res) => {
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, title, description, eventDate, location } = req.body; const event = { id: uuidv4(), user_id: userId, title, description: description || '', event_date: eventDate, location: location || '', attendees: [userId], created_at: new Date().toISOString() }; await col('events').insertOne(event); res.json({ success: true, event }); } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+app.post('/api/events/:eventId/rsvp', async (req, res) => {
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId } = req.body; const event = await col('events').findOne({ id: req.params.eventId }); if (!event) return res.json({ success: false, error: 'Event not found' }); const attendees = event.attendees || []; const idx = attendees.indexOf(userId); if (idx > -1) { attendees.splice(idx, 1); await col('events').updateOne({ id: req.params.eventId }, { $set: { attendees } }); res.json({ success: true, going: false }); } else { attendees.push(userId); await col('events').updateOne({ id: req.params.eventId }, { $set: { attendees } }); res.json({ success: true, going: true }); } } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+// ==================== POLLS ====================
+app.get('/api/polls', async (req, res) => {
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const polls = await col('polls').find({}).sort({ created_at: -1 }).limit(30).toArray(); for (let p of polls) { const u = await col('users').findOne({ id: p.user_id }); p.tag_name = u ? u.tag_name : 'unknown'; const votes = await col('poll_votes').find({ poll_id: p.id }).toArray(); const counts = {}; votes.forEach(v => { counts[v.option_index] = (counts[v.option_index] || 0) + 1; }); p.votes = Object.entries(counts).map(e => ({ option_index: parseInt(e[0]), count: e[1] })); } res.json({ success: true, polls }); } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+app.post('/api/polls', async (req, res) => {
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, question, options } = req.body; const poll = { id: uuidv4(), user_id: userId, question, options, created_at: new Date().toISOString() }; await col('polls').insertOne(poll); res.json({ success: true, poll }); } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+app.post('/api/polls/vote', async (req, res) => {
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, pollId, optionIndex } = req.body; const existing = await col('poll_votes').findOne({ user_id: userId, poll_id: pollId }); if (existing) return res.json({ success: false, error: 'Already voted' }); await col('poll_votes').insertOne({ id: uuidv4(), user_id: userId, poll_id: pollId, option_index: optionIndex, created_at: new Date().toISOString() }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+// ==================== ADMIN ====================
+const ADMIN_KEY = process.env.ADMIN_KEY || 'museadmin2026';
+function checkAdmin(req, res, next) { const key = req.headers['x-admin-key']; if (key !== ADMIN_KEY) return res.json({ success: false, error: 'Unauthorized' }); next(); }
+
+app.get('/api/admin/users', checkAdmin, async (req, res) => { try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const users = await col('users').find({}).toArray(); res.json({ success: true, users }); } catch (err) { res.json({ success: false, error: err.message }); } });
+app.get('/api/admin/posts', checkAdmin, async (req, res) => { try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const posts = await col('posts').find({}).sort({ created_at: -1 }).limit(100).toArray(); res.json({ success: true, posts }); } catch (err) { res.json({ success: false, error: err.message }); } });
+app.get('/api/admin/disputes', checkAdmin, async (req, res) => { try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const disputes = await col('disputes').find({}).sort({ created_at: -1 }).toArray(); res.json({ success: true, disputes }); } catch (err) { res.json({ success: false, error: err.message }); } });
+app.post('/api/admin/user/:userId', checkAdmin, async (req, res) => { try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { action, password } = req.body; const userId = req.params.userId; if (action === 'block') await col('users').updateOne({ id: userId }, { $set: { blocked: true } }); else if (action === 'unblock') await col('users').updateOne({ id: userId }, { $set: { blocked: false } }); else if (action === 'reset_password') await col('users').updateOne({ id: userId }, { $set: { password_hash: bcrypt.hashSync(password, 10) } }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); } });
+app.delete('/api/admin/user/:userId', checkAdmin, async (req, res) => { try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const userId = req.params.userId; await col('posts').deleteMany({ user_id: userId }); await col('likes').deleteMany({ user_id: userId }); await col('comments').deleteMany({ user_id: userId }); await col('friends').deleteMany({ $or: [{ user_id: userId }, { friend_id: userId }] }); await col('messages').deleteMany({ $or: [{ sender_id: userId }, { receiver_id: userId }] }); await col('notifications').deleteMany({ user_id: userId }); await col('users').deleteOne({ id: userId }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); } });
+app.post('/api/admin/disputes/:disputeId', checkAdmin, async (req, res) => { try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { action } = req.body; if (action === 'block') { const dispute = await col('disputes').findOne({ id: req.params.disputeId }); if (dispute) await col('users').updateOne({ id: dispute.reported_user_id }, { $set: { blocked: true } }); } await col('disputes').updateOne({ id: req.params.disputeId }, { $set: { status: 'resolved', resolution: action, resolved_at: new Date().toISOString() } }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); } });
+app.delete('/api/admin/posts/:postId', checkAdmin, async (req, res) => { try { if (!db) return res.json({ success: false, error: 'Database not connected' }); await col('posts').deleteOne({ id: req.params.postId }); await col('likes').deleteMany({ post_id: req.params.postId }); await col('comments').deleteMany({ post_id: req.params.postId }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); } });
+
 // ==================== SETTINGS / ACCOUNT ====================
 app.post('/api/settings/password', async (req, res) => {
     try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, currentPassword, newPassword } = req.body; const user = await col('users').findOne({ id: userId }); if (!user) return res.json({ success: false, error: 'User not found' }); if (!user.password_hash) return res.json({ success: false, error: 'No password set for auto-generated accounts' }); if (!bcrypt.compareSync(currentPassword, user.password_hash)) return res.json({ success: false, error: 'Current password is incorrect' }); if (!newPassword || newPassword.length < 4) return res.json({ success: false, error: 'New password must be at least 4 characters' }); await col('users').updateOne({ id: userId }, { $set: { password_hash: bcrypt.hashSync(newPassword, 10) } }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
@@ -271,6 +329,11 @@ app.post('/api/settings/password', async (req, res) => {
 
 app.post('/api/account/delete', async (req, res) => {
     try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId } = req.body; await col('posts').deleteMany({ user_id: userId }); await col('likes').deleteMany({ user_id: userId }); await col('comments').deleteMany({ user_id: userId }); await col('friends').deleteMany({ $or: [{ user_id: userId }, { friend_id: userId }] }); await col('messages').deleteMany({ $or: [{ sender_id: userId }, { receiver_id: userId }] }); await col('notifications').deleteMany({ user_id: userId }); await col('bookmarks').deleteMany({ user_id: userId }); await col('users').deleteOne({ id: userId }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+// Serve frontend for any unmatched routes
+app.get('*', function(req, res) {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // ==================== START SERVER ====================

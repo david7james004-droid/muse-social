@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#808080">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>Admin | Muse</title>
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <style>
+        :root { --bg: #808080; --bg-dark: #606060; --bg-darker: #404040; --bg-card: rgba(0,0,0,0.2); --text: #FFFFFF; --text-muted: #999999; --accent: #ADD8E6; --gold: #FFD700; --danger: #FF6B6B; --success: #4CAF50; --warning: #FFA726; --radius: 16px; --radius-sm: 8px; --footer-height: 70px; --nav-height: 50px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; padding-bottom: calc(var(--footer-height) + 100px); }
+        .app-container { max-width: 600px; margin: 0 auto; min-height: 100vh; }
+        .top-nav { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-darker); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,215,0,0.3); height: var(--nav-height); }
+        .nav-left { position: relative; }
+        .muse-menu-btn { background: none; border: none; cursor: pointer; padding: 4px; }
+        .nav-logo-icon { width: 38px; height: 38px; filter: drop-shadow(0 0 8px rgba(255,215,0,0.6)); }
+        .nav-center .page-title { font-size: 1.1rem; font-weight: 600; color: var(--gold); letter-spacing: 1px; }
+        .nav-right { display: flex; gap: 12px; align-items: center; }
+        .admin-badge { background: var(--danger); color: #fff; padding: 4px 10px; border-radius: 12px; font-size: 0.65rem; font-weight: 700; letter-spacing: 1px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 12px 16px; }
+        .stat-card { background: var(--bg-card); border-radius: var(--radius-sm); padding: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+        .stat-value { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+        .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+        .stat-card.warning .stat-value { color: var(--warning); }
+        .stat-card.danger .stat-value { color: var(--danger); }
+        .stat-card.success .stat-value { color: var(--success); }
+        .admin-tabs { display: flex; gap: 4px; padding: 0 16px; margin-bottom: 12px; overflow-x: auto; }
+        .admin-tab { padding: 8px 14px; background: rgba(255,255,255,0.04); border: 1px solid #555; border-radius: 20px; color: var(--text-muted); cursor: pointer; font-size: 0.75rem; white-space: nowrap; font-family: inherit; transition: all 0.2s; }
+        .admin-tab.active { background: var(--gold); color: #000; border-color: var(--gold); font-weight: 600; }
+        .admin-panel { padding: 0 16px; display: none; }
+        .admin-panel.active { display: block; }
+        .admin-search { padding: 0 16px 12px; }
+        .admin-search input { width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.08); border: 2px solid #666; border-radius: 25px; color: #fff; font-size: 0.9rem; font-family: inherit; outline: none; }
+        .admin-search input:focus { border-color: var(--gold); }
+        .user-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+        .user-table th { text-align: left; padding: 8px 6px; color: var(--accent); font-size: 0.65rem; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .user-table td { padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .user-table .user-av { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); display: inline-flex; align-items: center; justify-content: center; font-weight: bold; color: #000; font-size: 0.65rem; margin-right: 6px; vertical-align: middle; }
+        .action-btn { padding: 4px 10px; border-radius: 12px; border: none; cursor: pointer; font-size: 0.65rem; font-weight: 600; font-family: inherit; margin: 1px; }
+        .btn-block { background: var(--danger); color: #fff; }
+        .btn-unblock { background: var(--success); color: #fff; }
+        .btn-reset { background: var(--warning); color: #000; }
+        .btn-delete { background: var(--danger); color: #fff; }
+        .btn-view { background: var(--accent); color: #000; }
+        .dispute-card { background: var(--bg-card); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 8px; border-left: 3px solid var(--warning); }
+        .dispute-card.resolved { border-left-color: var(--success); opacity: 0.7; }
+        .dispute-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .dispute-reporter { color: var(--accent); font-weight: 600; font-size: 0.8rem; }
+        .dispute-status { font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; }
+        .status-pending { background: rgba(255,167,38,0.2); color: var(--warning); }
+        .status-resolved { background: rgba(76,175,80,0.2); color: var(--success); }
+        .dispute-text { font-size: 0.8rem; margin-bottom: 8px; line-height: 1.4; }
+        .dispute-actions { display: flex; gap: 6px; }
+        .activity-item { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 0.8rem; display: flex; gap: 10px; }
+        .activity-icon { font-size: 1.2rem; flex-shrink: 0; }
+        .activity-text { flex: 1; }
+        .activity-time { font-size: 0.65rem; color: var(--text-muted); }
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+        .empty-state-icon { font-size: 3rem; margin-bottom: 12px; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 500; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-box { background: var(--bg-darker); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 400px; }
+        .modal-box h3 { color: var(--accent); margin-bottom: 16px; text-align: center; }
+        .modal-buttons { display: flex; gap: 8px; margin-top: 16px; }
+        .btn-save { flex: 1; padding: 10px; background: var(--accent); color: #000; border: none; border-radius: 20px; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .btn-cancel { flex: 1; padding: 10px; background: transparent; border: 1px solid #666; color: var(--text-muted); border-radius: 20px; cursor: pointer; font-family: inherit; }
+        #toast { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 24px; border-radius: 20px; z-index: 9999; font-size: 0.9rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+        @media (max-width: 480px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <header class="top-nav">
+        <div class="nav-left">
+            <button class="muse-menu-btn" onclick="window.location.href='centre.html'">
+                <svg viewBox="0 0 40 40" class="nav-logo-icon"><circle cx="20" cy="20" r="18" fill="#000" stroke="#FFD700" stroke-width="1.5"/><text x="20" y="26" text-anchor="middle" font-family="Arial" font-weight="300" font-size="20" fill="#ADD8E6">M</text></svg>
+            </button>
+        </div>
+        <div class="nav-center"><h1 class="page-title">🛡️ Admin Panel</h1></div>
+        <div class="nav-right"><span class="admin-badge">ADMIN</span></div>
+    </header>
+
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><div class="stat-value" id="statUsers">0</div><div class="stat-label">Total Users</div></div>
+        <div class="stat-card"><div class="stat-value" id="statPosts">0</div><div class="stat-label">Total Posts</div></div>
+        <div class="stat-card warning"><div class="stat-value" id="statDisputes">0</div><div class="stat-label">Open Disputes</div></div>
+        <div class="stat-card success"><div class="stat-value" id="statToday">0</div><div class="stat-label">Active Today</div></div>
+    </div>
+
+    <div class="admin-tabs">
+        <button class="admin-tab active" data-panel="users">👥 Users</button>
+        <button class="admin-tab" data-panel="disputes">⚠️ Disputes</button>
+        <button class="admin-tab" data-panel="activity">📊 Activity</button>
+        <button class="admin-tab" data-panel="posts-panel">📝 Posts</button>
+    </div>
+
+    <div class="admin-search"><input type="text" id="adminSearch" placeholder="Search users by tag name..."></div>
+
+    <div class="admin-panel active" id="panel-users"><div id="usersList"><div class="empty-state"><div class="empty-state-icon">👥</div><h3>Loading users...</h3></div></div></div>
+    <div class="admin-panel" id="panel-disputes"><div id="disputesList"><div class="empty-state"><div class="empty-state-icon">✅</div><h3>No open disputes</h3></div></div></div>
+    <div class="admin-panel" id="panel-activity"><div id="activityList"><div class="empty-state"><div class="empty-state-icon">📊</div><h3>Loading activity...</h3></div></div></div>
+    <div class="admin-panel" id="panel-posts-panel"><div id="postsPanelList"><div class="empty-state"><div class="empty-state-icon">📝</div><h3>Loading posts...</h3></div></div></div>
+</div>
+
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal-box">
+        <h3 id="confirmTitle">Confirm Action</h3>
+        <p style="color:var(--text-muted);text-align:center;" id="confirmText">Are you sure?</p>
+        <div class="modal-buttons">
+            <button class="btn-cancel" id="confirmCancel">Cancel</button>
+            <button class="btn-save" id="confirmOk" style="background:var(--danger);">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+var API_BASE = '/api';
+var currentUser = null;
+var adminPassword = 'museadmin2026';
+var allUsers = [];
+var allPosts = [];
+var pendingAction = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    var stored = localStorage.getItem('muse_user');
+    if (!stored) { window.location.href = 'login.html'; return; }
+    currentUser = JSON.parse(stored);
+    
+    if (currentUser.tag_name !== 'museadmin' && currentUser.tag_name !== 'admin') {
+        var pass = prompt('Enter admin password:');
+        if (pass !== adminPassword) { showToast('Access denied'); window.location.href = 'centre.html'; return; }
+    }
+    
+    setupUI();
+    loadAllData();
+});
+
+function setupUI() {
+    document.querySelectorAll('.admin-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.admin-tab').forEach(function(t) { t.classList.remove('active'); });
+            this.classList.add('active');
+            document.querySelectorAll('.admin-panel').forEach(function(p) { p.classList.remove('active'); });
+            document.getElementById('panel-' + this.dataset.panel).classList.add('active');
+        });
+    });
+    
+    document.getElementById('adminSearch').addEventListener('input', debounce(function() { renderUsers(this.value); }, 300));
+    document.getElementById('confirmCancel').addEventListener('click', function() { document.getElementById('confirmModal').classList.remove('active'); pendingAction = null; });
+    document.getElementById('confirmOk').addEventListener('click', function() { if (pendingAction) pendingAction(); document.getElementById('confirmModal').classList.remove('active'); pendingAction = null; });
+}
+
+function loadAllData() {
+    fetch(API_BASE + '/admin/users', { headers: { 'x-admin-key': adminPassword } }).then(function(r) { return r.json(); }).then(function(result) { if (result.success) { allUsers = result.users || []; updateStats(); renderUsers(); } }).catch(function() {});
+    fetch(API_BASE + '/admin/posts', { headers: { 'x-admin-key': adminPassword } }).then(function(r) { return r.json(); }).then(function(result) { if (result.success) { allPosts = result.posts || []; updateStats(); renderPostsPanel(); renderActivity(); } }).catch(function() {});
+    fetch(API_BASE + '/admin/disputes', { headers: { 'x-admin-key': adminPassword } }).then(function(r) { return r.json(); }).then(function(result) { if (result.success) { renderDisputes(result.disputes || []); updateStats(); } }).catch(function() {});
+}
+
+function updateStats() {
+    document.getElementById('statUsers').textContent = allUsers.length;
+    document.getElementById('statPosts').textContent = allPosts.length;
+    var today = new Date().toISOString().split('T')[0];
+    document.getElementById('statToday').textContent = allPosts.filter(function(p) { return (p.created_at || '').startsWith(today); }).length;
+}
+
+function renderUsers(filter) {
+    var container = document.getElementById('usersList');
+    var users = allUsers;
+    if (filter) { users = users.filter(function(u) { return (u.tag_name || '').toLowerCase().indexOf(filter.toLowerCase()) !== -1; }); }
+    if (!users.length) { container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div><h3>No users found</h3></div>'; return; }
+    container.innerHTML = '<table class="user-table"><thead><tr><th>User</th><th>Posts</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead><tbody>' +
+        users.map(function(u) {
+            var postCount = allPosts.filter(function(p) { return p.user_id === u.id; }).length;
+            var joinDate = u.join_date ? new Date(u.join_date).toLocaleDateString('en-GB') : 'Unknown';
+            var isBlocked = u.blocked ? true : false;
+            return '<tr><td><span class="user-av">' + (u.tag_name || '?')[0].toUpperCase() + '</span>@' + escHtml(u.tag_name || 'unknown') + '</td><td>' + postCount + '</td><td>' + joinDate + '</td><td><span style="color:' + (isBlocked ? 'var(--danger)' : 'var(--success)') + ';">' + (isBlocked ? '🚫 Blocked' : '✅ Active') + '</span></td><td>' +
+                '<button class="action-btn btn-reset" onclick="resetUserPassword(\'' + u.id + '\')">🔑</button>' +
+                (isBlocked ? '<button class="action-btn btn-unblock" onclick="toggleBlockUser(\'' + u.id + '\', false)">Unblock</button>' : '<button class="action-btn btn-block" onclick="toggleBlockUser(\'' + u.id + '\', true)">Block</button>') +
+                '<button class="action-btn btn-delete" onclick="deleteUser(\'' + u.id + '\')">🗑️</button></td></tr>';
+        }).join('') + '</tbody></table>';
+}
+
+function renderDisputes(disputes) {
+    var container = document.getElementById('disputesList');
+    var openDisputes = disputes.filter(function(d) { return d.status === 'open'; });
+    document.getElementById('statDisputes').textContent = openDisputes.length;
+    if (!disputes.length) { container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><h3>No disputes</h3></div>'; return; }
+    container.innerHTML = disputes.map(function(d) {
+        return '<div class="dispute-card ' + (d.status === 'resolved' ? 'resolved' : '') + '"><div class="dispute-header"><span class="dispute-reporter">@' + escHtml(d.reporter || 'unknown') + '</span><span class="dispute-status ' + (d.status === 'open' ? 'status-pending' : 'status-resolved') + '">' + (d.status === 'open' ? '⚠️ Open' : '✅ Resolved') + '</span></div><div class="dispute-text"><strong>Reported:</strong> @' + escHtml(d.reported_user || 'unknown') + '<br><strong>Reason:</strong> ' + escHtml(d.reason || 'No reason') + '</div><div style="font-size:0.65rem;color:var(--text-muted);margin-bottom:8px;">' + timeAgo(d.created_at) + '</div>' +
+        (d.status === 'open' ? '<div class="dispute-actions"><button class="action-btn btn-block" onclick="resolveDispute(\'' + d.id + '\', \'block\')">🚫 Block</button><button class="action-btn btn-view" onclick="resolveDispute(\'' + d.id + '\', \'warn\')">⚠️ Warn</button><button class="action-btn btn-unblock" onclick="resolveDispute(\'' + d.id + '\', \'dismiss\')">✕ Dismiss</button></div>' : '') + '</div>';
+    }).join('');
+}
+
+function renderActivity() {
+    var container = document.getElementById('activityList');
+    var recent = allPosts.slice().sort(function(a, b) { return new Date(b.created_at) - new Date(a.created_at); }).slice(0, 30);
+    if (!recent.length) { container.innerHTML = '<div class="empty-state"><h3>No activity yet</h3></div>'; return; }
+    container.innerHTML = recent.map(function(p) {
+        var user = allUsers.find(function(u) { return u.id === p.user_id; });
+        return '<div class="activity-item"><div class="activity-icon">📝</div><div class="activity-text"><strong>@' + escHtml(user ? user.tag_name : 'unknown') + '</strong> posted: "' + escHtml((p.text || '').substring(0, 60)) + (p.text && p.text.length > 60 ? '...' : '') + '"</div><div class="activity-time">' + timeAgo(p.created_at) + '</div></div>';
+    }).join('');
+}
+
+function renderPostsPanel() {
+    var container = document.getElementById('postsPanelList');
+    var recent = allPosts.slice().sort(function(a, b) { return new Date(b.created_at) - new Date(a.created_at); }).slice(0, 20);
+    if (!recent.length) { container.innerHTML = '<div class="empty-state"><h3>No posts</h3></div>'; return; }
+    container.innerHTML = recent.map(function(p) {
+        var user = allUsers.find(function(u) { return u.id === p.user_id; });
+        return '<div class="dispute-card" style="border-left-color: var(--accent);"><div class="dispute-header"><span class="dispute-reporter">@' + escHtml(user ? user.tag_name : 'unknown') + '</span><span style="font-size:0.65rem;color:var(--text-muted);">' + timeAgo(p.created_at) + '</span></div><div class="dispute-text">' + escHtml(p.text || '(No text)') + '</div><div class="dispute-actions"><button class="action-btn btn-view">❤️ ' + (p.likes_count || 0) + '</button><button class="action-btn btn-view">💬 ' + (p.comments_count || 0) + '</button><button class="action-btn btn-delete" onclick="deletePost(\'' + p.id + '\')">🗑️ Delete</button></div></div>';
+    }).join('');
+}
+
+function toggleBlockUser(userId, block) {
+    var user = allUsers.find(function(u) { return u.id === userId; });
+    var name = user ? user.tag_name : 'user';
+    document.getElementById('confirmTitle').textContent = block ? 'Block User?' : 'Unblock User?';
+    document.getElementById('confirmText').textContent = (block ? 'Block' : 'Unblock') + ' @' + name + '?';
+    document.getElementById('confirmModal').classList.add('active');
+    pendingAction = function() {
+        fetch(API_BASE + '/admin/user/' + userId, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': adminPassword }, body: JSON.stringify({ action: block ? 'block' : 'unblock' }) })
+        .then(function(r) { return r.json(); }).then(function(result) { if (result.success) { showToast((block ? 'Blocked' : 'Unblocked') + ' @' + name); loadAllData(); } });
+    };
+}
+
+function resetUserPassword(userId) {
+    var user = allUsers.find(function(u) { return u.id === userId; });
+    var name = user ? user.tag_name : 'user';
+    var newPass = prompt('Enter new password for @' + name + ' (min 4 characters):');
+    if (!newPass || newPass.length < 4) { showToast('Password must be at least 4 characters'); return; }
+    fetch(API_BASE + '/admin/user/' + userId, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': adminPassword }, body: JSON.stringify({ action: 'reset_password', password: newPass }) })
+    .then(function(r) { return r.json(); }).then(function(result) { if (result.success) { showToast('Password reset for @' + name); } });
+}
+
+function deleteUser(userId) {
+    var user = allUsers.find(function(u) { return u.id === userId; });
+    var name = user ? user.tag_name : 'user';
+    document.getElementById('confirmTitle').textContent = 'Delete User?';
+    document.getElementById('confirmText').textContent = 'Permanently delete @' + name + ' and ALL their data?';
+    document.getElementById('confirmModal').classList.add('active');
+    pendingAction = function() {
+        fetch(API_BASE + '/admin/user/' + userId, { method: 'DELETE', headers: { 'x-admin-key': adminPassword } })
+        .then(function(r) { return r.json(); }).then(function(result) { if (result.success) { showToast('Deleted @' + name); loadAllData(); } });
+    };
+}
+
+function resolveDispute(disputeId, action) {
+    var actions = { block: 'Block user', warn: 'Warn user', dismiss: 'Dismiss report' };
+    document.getElementById('confirmTitle').textContent = 'Resolve Dispute';
+    document.getElementById('confirmText').textContent = actions[action] + '?';
+    document.getElementById('confirmModal').classList.add('active');
+    pendingAction = function() {
+        fetch(API_BASE + '/admin/disputes/' + disputeId, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': adminPassword }, body: JSON.stringify({ action: action }) })
+        .then(function(r) { return r.json(); }).then(function(result) { if (result.success) { showToast('Dispute resolved'); loadAllData(); } });
+    };
+}
+
+function deletePost(postId) {
+    document.getElementById('confirmTitle').textContent = 'Delete Post?';
+    document.getElementById('confirmText').textContent = 'Remove this post permanently?';
+    document.getElementById('confirmModal').classList.add('active');
+    pendingAction = function() {
+        fetch(API_BASE + '/admin/posts/' + postId, { method: 'DELETE', headers: { 'x-admin-key': adminPassword } })
+        .then(function(r) { return r.json(); }).then(function(result) { if (result.success) { showToast('Post deleted'); loadAllData(); } });
+    };
+}
+
+function timeAgo(d) { if(!d) return ''; var s = Math.floor((new Date() - new Date(d)) / 1000); if(s<60) return 'just now'; if(s<3600) return Math.floor(s/60)+'m ago'; if(s<86400) return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
+function escHtml(t) { if(!t) return ''; var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+function showToast(msg) { var t = document.getElementById('toast'); t.textContent = msg; t.style.opacity = '1'; setTimeout(function() { t.style.opacity = '0'; }, 3000); }
+function debounce(func, wait) { var timeout; return function() { var args = arguments, context = this; clearTimeout(timeout); timeout = setTimeout(function() { func.apply(context, args); }, wait); }; }
+</script>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#808080">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>Hot | Muse</title>
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <style>
+        :root { --bg: #808080; --bg-dark: #606060; --bg-darker: #404040; --bg-card: rgba(0,0,0,0.2); --text: #FFFFFF; --text-muted: #999999; --accent: #ADD8E6; --accent-hover: #9EC5D6; --gold: #FFD700; --danger: #FF6B6B; --success: #4CAF50; --radius: 16px; --radius-sm: 8px; --radius-lg: 25px; --footer-height: 70px; --nav-height: 50px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; padding-bottom: calc(var(--footer-height) + 100px); }
+        .app-container { max-width: 600px; margin: 0 auto; min-height: 100vh; }
+        .top-nav { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-dark); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.1); height: var(--nav-height); }
+        .nav-left { position: relative; }
+        .muse-menu-btn { background: none; border: none; cursor: pointer; padding: 4px; }
+        .nav-logo-icon { width: 38px; height: 38px; filter: drop-shadow(0 0 8px rgba(255,215,0,0.6)); }
+        .dropdown-menu { display: none; position: absolute; top: 100%; left: 0; background: var(--bg-darker); border-radius: var(--radius-sm); min-width: 200px; max-height: 350px; overflow-y: auto; z-index: 200; box-shadow: 0 8px 32px rgba(0,0,0,0.4); list-style: none; }
+        .dropdown-menu.show { display: block; }
+        .dropdown-menu li a { display: block; padding: 10px 16px; color: var(--text); text-decoration: none; font-size: 0.9rem; transition: background 0.2s; }
+        .dropdown-menu li a:hover { background: var(--accent); color: #000; }
+        .nav-center .page-title { font-size: 1.1rem; font-weight: 600; color: var(--accent); letter-spacing: 1px; }
+        .nav-right { display: flex; gap: 12px; align-items: center; }
+        .nav-icon { text-decoration: none; font-size: 1.3rem; position: relative; }
+        .notification-dot { position: absolute; top: -4px; right: -4px; width: 8px; height: 8px; background: var(--danger); border-radius: 50%; display: none; }
+        .notification-dot.has-unread { display: block; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .countdown-banner { background: linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,107,107,0.08)); padding: 0.8rem 1rem; text-align: center; border-bottom: 2px solid rgba(255,215,0,0.2); }
+        .countdown-timer { font-size: 1.6rem; font-weight: 700; color: #FFD700; font-family: 'Courier New', monospace; letter-spacing: 2px; }
+        .countdown-label { font-size: 0.7rem; color: #999; text-transform: uppercase; letter-spacing: 1px; }
+        .hot-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; padding: 0.75rem; background: rgba(0,0,0,0.08); }
+        .hot-stat { text-align: center; padding: 0.5rem 0.3rem; background: rgba(255,255,255,0.03); border-radius: 8px; }
+        .hot-stat-val { font-size: 1.2rem; font-weight: 700; color: #ADD8E6; display: block; }
+        .hot-stat-lbl { font-size: 0.55rem; color: #999; text-transform: uppercase; letter-spacing: 1px; }
+        .podium-section { padding: 1rem; }
+        .section-title { color: #ADD8E6; font-size: 1rem; text-align: center; margin-bottom: 0.75rem; }
+        .podium { display: flex; justify-content: center; align-items: flex-end; gap: 0.5rem; min-height: 180px; }
+        .podium-spot { display: flex; flex-direction: column; align-items: center; flex: 1; max-width: 100px; }
+        .podium-spot.first { order: 2; } .podium-spot.second { order: 1; } .podium-spot.third { order: 3; }
+        .podium-medal { font-size: 2rem; } .podium-spot.first .podium-medal { font-size: 3rem; }
+        .podium-av { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg,#ADD8E6,#FFD700); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem; color: #000; border: 3px solid #FFD700; margin: 0.3rem 0; }
+        .podium-spot.first .podium-av { width: 65px; height: 65px; font-size: 1.5rem; box-shadow: 0 0 15px rgba(255,215,0,0.4); }
+        .podium-name { font-weight: 600; font-size: 0.75rem; color: #FFF; }
+        .podium-likes { font-size: 0.7rem; color: #FF6B8A; font-weight: 600; }
+        .leaderboard-section { padding: 0 0.75rem 0.75rem; }
+        .lb-list { display: flex; flex-direction: column; gap: 0.3rem; }
+        .lb-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.7rem; background: rgba(0,0,0,0.12); border-radius: 10px; cursor: pointer; }
+        .lb-rank { font-weight: 700; width: 28px; text-align: center; font-size: 0.85rem; }
+        .rank-1 { color: #FFD700; } .rank-2 { color: #C0C0C0; } .rank-3 { color: #CD7F32; } .rank-other { color: #999; }
+        .lb-av { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,#ADD8E6,#FFD700); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.7rem; color: #000; flex-shrink: 0; }
+        .lb-info { flex: 1; min-width: 0; }
+        .lb-user { font-weight: 600; font-size: 0.8rem; color: #FFF; }
+        .lb-preview { font-size: 0.7rem; color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+        .lb-likes { font-weight: 700; font-size: 0.85rem; color: #FF6B8A; flex-shrink: 0; }
+        .trending-section { padding: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05); }
+        .trending-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+        .trending-tag { padding: 0.3rem 0.7rem; background: rgba(173,216,230,0.08); border-radius: 14px; font-size: 0.75rem; color: #ADD8E6; cursor: pointer; }
+        .footer-dashboard { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-darker); border-top: 2px solid var(--gold); z-index: 300; max-width: 600px; margin: 0 auto; transition: transform 0.3s ease; }
+        .footer-dashboard.collapsed { transform: translateY(calc(100% - 44px)); }
+        .footer-handle { text-align: center; padding: 6px; cursor: pointer; }
+        .footer-handle-bar { display: inline-block; width: 40px; height: 4px; background: var(--text-muted); border-radius: 2px; }
+        .footer-paths { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px 12px; gap: 4px; }
+        .footer-path { display: flex; flex-direction: column; align-items: center; gap: 2px; text-decoration: none; color: var(--text-muted); font-size: 0.65rem; padding: 6px 8px; border-radius: var(--radius-sm); transition: all 0.2s; min-width: 50px; }
+        .footer-path:hover, .footer-path.active { color: var(--accent); background: rgba(173,216,230,0.1); }
+        .footer-path-icon { font-size: 1.3rem; }
+        .footer-path-label { font-size: 0.6rem; text-align: center; }
+        .footer-muse-btn { width: 56px; height: 56px; border-radius: 50%; background: #000; border: 3px solid var(--gold); cursor: pointer; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 0 10px rgba(255,215,0,0.5)); flex-shrink: 0; margin: 0 6px; padding: 0; }
+        .footer-muse-btn:hover { transform: scale(1.1); filter: drop-shadow(0 0 20px rgba(255,215,0,0.8)); }
+        .footer-muse-btn svg { width: 30px; height: 30px; }
+        #toast { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 24px; border-radius: 20px; z-index: 9999; font-size: 0.9rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+        @media (max-width: 480px) { .footer-muse-btn { width: 46px; height: 46px; } .footer-muse-btn svg { width: 24px; height: 24px; } }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <header class="top-nav">
+        <div class="nav-left">
+            <button class="muse-menu-btn" id="museMenuBtn"><svg viewBox="0 0 40 40" class="nav-logo-icon"><circle cx="20" cy="20" r="18" fill="#000" stroke="#FFD700" stroke-width="1.5"/><text x="20" y="26" text-anchor="middle" font-family="Arial" font-weight="300" font-size="20" fill="#ADD8E6">M</text></svg></button>
+            <ul class="dropdown-menu" id="dropdownMenu">
+                <li><a href="centre.html">🏠 Centre</a></li><li><a href="hot.html">🔥 Hot</a></li><li><a href="profile.html">👤 Profile</a></li><li><a href="friends.html">👫 Friends</a></li><li><a href="messages.html">💬 Messages</a></li><li><a href="notifications.html">🔔 Notifications</a></li><li><a href="slideshow.html">🎞️ Slideshow</a></li><li><a href="wallet.html">💰 Wallet</a></li><li><a href="groups.html">👥 Groups</a></li><li><a href="events.html">🎫 Events</a></li><li><a href="polls.html">📊 Polls</a></li><li><a href="stories.html">📖 Stories</a></li><li><a href="search.html">🔍 Search</a></li><li><a href="media-uploads.html">📷 Uploads</a></li><li><a href="settings.html">⚙️ Settings</a></li>
+            </ul>
+        </div>
+        <div class="nav-center"><h1 class="page-title">🔥 Hot</h1></div>
+        <div class="nav-right"><a href="messages.html" class="nav-icon" id="msgIcon">💬<span class="notification-dot" id="msgDot"></span></a><a href="notifications.html" class="nav-icon" id="notifIcon">🔔<span class="notification-dot" id="notifDot"></span></a></div>
+    </header>
+
+    <section class="countdown-banner"><div class="countdown-label">Leaderboard resets in</div><div class="countdown-timer" id="countdown">00:00:00</div></section>
+    <section class="hot-stats"><div class="hot-stat"><span class="hot-stat-val" id="statRanked">0</span><span class="hot-stat-lbl">Ranked</span></div><div class="hot-stat"><span class="hot-stat-val" id="statLikes">0</span><span class="hot-stat-lbl">Likes</span></div><div class="hot-stat"><span class="hot-stat-val" id="statTop">0</span><span class="hot-stat-lbl">Top ❤️</span></div><div class="hot-stat"><span class="hot-stat-val" id="statUsers">0</span><span class="hot-stat-lbl">Posters</span></div></section>
+    <section class="podium-section"><h2 class="section-title">🏆 Top 3 Today</h2><div class="podium" id="podium"><div style="width:100%;text-align:center;color:#999;padding:1rem;">Loading...</div></div></section>
+    <section class="leaderboard-section"><h2 style="color:#ADD8E6;font-size:0.9rem;margin-bottom:0.5rem;">📊 Leaderboard</h2><div class="lb-list" id="lbList"><div style="text-align:center;color:#999;padding:1rem;">Loading...</div></div></section>
+    <section class="trending-section"><h2>📈 Trending Hashtags</h2><div class="trending-tags" id="trendingTags"><span style="color:#999;">Loading...</span></div></section>
+</div>
+
+<footer class="footer-dashboard collapsed" id="footerDashboard">
+    <div class="footer-handle" id="footerHandle"><div class="footer-handle-bar"></div></div>
+    <div class="footer-paths">
+        <a href="profile.html" class="footer-path"><span class="footer-path-icon">👤</span><span class="footer-path-label">Profile</span></a>
+        <a href="media-uploads.html" class="footer-path"><span class="footer-path-icon">📷</span><span class="footer-path-label">Uploads</span></a>
+        <button class="footer-muse-btn" id="footerMuseBtn" onclick="window.location.href='centre.html'"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="#000" stroke="#FFD700" stroke-width="2"/><text x="20" y="27" text-anchor="middle" font-family="Arial" font-weight="300" font-size="22" fill="#ADD8E6">M</text></svg></button>
+        <a href="friends.html" class="footer-path"><span class="footer-path-icon">👫</span><span class="footer-path-label">Friends</span></a>
+        <a href="slideshow.html" class="footer-path"><span class="footer-path-icon">🎞️</span><span class="footer-path-label">Slideshow</span></a>
+    </div>
+</footer>
+<div id="toast"></div>
+
+<script>
+var API_BASE = '/api';
+var currentUser = null;
+document.addEventListener('DOMContentLoaded', function() {
+    var stored = localStorage.getItem('muse_user');
+    if (!stored) { window.location.href = 'index.html'; return; }
+    currentUser = JSON.parse(stored);
+    setupUI();
+    loadHotData();
+    startCountdown();
+    checkUnread();
+    setInterval(checkUnread, 15000);
+});
+function setupUI() {
+    document.getElementById('museMenuBtn').addEventListener('click', function(e) { e.stopPropagation(); document.getElementById('dropdownMenu').classList.toggle('show'); });
+    document.addEventListener('click', function() { document.getElementById('dropdownMenu').classList.remove('show'); });
+    document.getElementById('footerHandle').addEventListener('click', function() { document.getElementById('footerDashboard').classList.toggle('collapsed'); });
+    var startY = 0, footer = document.getElementById('footerDashboard');
+    footer.addEventListener('touchstart', function(e) { startY = e.touches[0].clientY; });
+    footer.addEventListener('touchmove', function(e) { var diff = startY - e.touches[0].clientY; if (diff > 30) footer.classList.remove('collapsed'); else if (diff < -30) footer.classList.add('collapsed'); });
+}
+function checkUnread() { fetch(API_BASE+'/notifications/'+currentUser.id).then(function(r){return r.json();}).then(function(r){var d=document.getElementById('notifDot');if(r.unread>0)d.classList.add('has-unread');else d.classList.remove('has-unread');}); fetch(API_BASE+'/conversations/'+currentUser.id).then(function(r){return r.json();}).then(function(r){var d=document.getElementById('msgDot');if(r.success&&r.conversations){var t=r.conversations.reduce(function(s,c){return s+(c.unread||0);},0);if(t>0)d.classList.add('has-unread');else d.classList.remove('has-unread');}}); }
+function loadHotData() {
+    fetch(API_BASE + '/posts?type=hot').then(function(r) { return r.json(); }).then(function(result) {
+        if (result.success && result.posts) {
+            var posts = result.posts;
+            var today = new Date().toISOString().split('T')[0];
+            var todayPosts = posts.filter(function(p) { return (p.created_at || '').startsWith(today); });
+            todayPosts.sort(function(a, b) { return ((b.likes_count||0)*2 + (b.comments_count||0)*3) - ((a.likes_count||0)*2 + (a.comments_count||0)*3); });
+            renderPodium(todayPosts.slice(0, 3));
+            renderLeaderboard(todayPosts.slice(0, 30));
+            renderTrending(todayPosts);
+            document.getElementById('statRanked').textContent = todayPosts.length;
+            document.getElementById('statLikes').textContent = todayPosts.reduce(function(s,p){return s+(p.likes_count||0);},0);
+            document.getElementById('statTop').textContent = todayPosts.length ? (todayPosts[0].likes_count||0) : 0;
+            document.getElementById('statUsers').textContent = new Set(todayPosts.map(function(p){return p.user_id;})).size;
+        }
+    });
+}
+function renderPodium(top3) {
+    var c = document.getElementById('podium');
+    if (!top3.length) { c.innerHTML = '<div style="width:100%;text-align:center;color:#999;">No posts today!</div>'; return; }
+    var order = [];
+    if (top3[1]) order.push({ u: top3[1], pos: 'second', medal: '🥈' });
+    if (top3[0]) order.push({ u: top3[0], pos: 'first', medal: '🥇' });
+    if (top3[2]) order.push({ u: top3[2], pos: 'third', medal: '🥉' });
+    c.innerHTML = order.map(function(s) { return '<div class="podium-spot '+s.pos+'"><div class="podium-medal">'+s.medal+'</div><div class="podium-av">'+(s.u.tag_name||'?')[0].toUpperCase()+'</div><div class="podium-name">@'+escHtml((s.u.tag_name||'').substring(0,10))+'</div><div class="podium-likes">❤️ '+(s.u.likes_count||0)+'</div></div>'; }).join('');
+}
+function renderLeaderboard(posts) {
+    var c = document.getElementById('lbList');
+    if (!posts.length) { c.innerHTML = '<div style="text-align:center;color:#999;">No posts yet</div>'; return; }
+    c.innerHTML = posts.map(function(p, i) { var rc = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other'; var rd = i<=2?['🥇','🥈','🥉'][i]:'#'+(i+1); return '<div class="lb-item"><div class="lb-rank '+rc+'">'+rd+'</div><div class="lb-av">'+(p.tag_name||'?')[0].toUpperCase()+'</div><div class="lb-info"><div class="lb-user">@'+escHtml(p.tag_name||'unknown')+'</div><div class="lb-preview">'+escHtml((p.text||'').substring(0,50))+'</div></div><div class="lb-likes">❤️ '+(p.likes_count||0)+'</div></div>'; }).join('');
+}
+function renderTrending(posts) {
+    var c = document.getElementById('trendingTags');
+    var tagCounts = {};
+    posts.forEach(function(p) { var tags = (p.text||'').match(/#[\w-]+/g)||[]; tags.forEach(function(t) { tagCounts[t] = (tagCounts[t]||0)+1; }); });
+    var sorted = Object.entries(tagCounts).sort(function(a,b){return b[1]-a[1];}).slice(0,15);
+    if (!sorted.length) { c.innerHTML = '<span style="color:#999;">No trending yet</span>'; return; }
+    c.innerHTML = sorted.map(function(t) { return '<span class="trending-tag">#'+escHtml(t[0])+' <small>'+t[1]+'</small></span>'; }).join('');
+}
+function startCountdown() {
+    function update() { var now = new Date(); var midnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()+1, 0, 0, 0)); var diff = midnight - now; var h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000); document.getElementById('countdown').textContent = String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }
+    update(); setInterval(update, 1000);
+}
+function escHtml(t) { if(!t) return ''; var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+function showToast(msg) { var t=document.getElementById('toast'); t.textContent=msg; t.style.opacity='1'; setTimeout(function(){t.style.opacity='0';},3000); }
+</script>
+</body>
+</html>
