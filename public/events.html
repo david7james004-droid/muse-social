@@ -97,59 +97,15 @@
 <div id="toast"></div>
 
 <script>
-var API_BASE = '/api';
-var currentUser = null;
-document.addEventListener('DOMContentLoaded', function() {
-    var stored = localStorage.getItem('muse_user');
-    if (!stored) { window.location.href = 'index.html'; return; }
-    currentUser = JSON.parse(stored);
-    setupUI();
-    loadEvents();
-    checkUnread();
-    setInterval(checkUnread, 15000);
-});
-function setupUI() {
-    document.getElementById('museMenuBtn').addEventListener('click', function(e) { e.stopPropagation(); document.getElementById('dropdownMenu').classList.toggle('show'); });
-    document.addEventListener('click', function() { document.getElementById('dropdownMenu').classList.remove('show'); });
-    document.getElementById('toggleFormBtn').addEventListener('click', function() { var f = document.getElementById('eventForm'); f.style.display = f.style.display === 'block' ? 'none' : 'block'; });
-    document.getElementById('footerHandle').addEventListener('click', function() { document.getElementById('footerDashboard').classList.toggle('collapsed'); });
-    var startY = 0, footer = document.getElementById('footerDashboard');
-    footer.addEventListener('touchstart', function(e) { startY = e.touches[0].clientY; });
-    footer.addEventListener('touchmove', function(e) { var diff = startY - e.touches[0].clientY; if (diff > 30) footer.classList.remove('collapsed'); else if (diff < -30) footer.classList.add('collapsed'); });
-}
+var API_BASE = '/api'; var currentUser = null;
+document.addEventListener('DOMContentLoaded', function() { var stored = localStorage.getItem('muse_user'); if (!stored) { window.location.href = 'index.html'; return; } currentUser = JSON.parse(stored); setupUI(); loadEvents(); checkUnread(); setInterval(checkUnread, 15000); });
+function setupUI() { document.getElementById('museMenuBtn').addEventListener('click', function(e) { e.stopPropagation(); document.getElementById('dropdownMenu').classList.toggle('show'); }); document.addEventListener('click', function() { document.getElementById('dropdownMenu').classList.remove('show'); }); document.getElementById('toggleFormBtn').addEventListener('click', function() { var f = document.getElementById('eventForm'); f.style.display = f.style.display === 'block' ? 'none' : 'block'; if (f.style.display === 'block') { var d = new Date(); d.setDate(d.getDate()+1); d.setHours(18,0,0,0); document.getElementById('edate').value = d.toISOString().slice(0,16); } }); document.getElementById('footerHandle').addEventListener('click', function() { document.getElementById('footerDashboard').classList.toggle('collapsed'); }); var startY = 0, footer = document.getElementById('footerDashboard'); footer.addEventListener('touchstart', function(e) { startY = e.touches[0].clientY; }); footer.addEventListener('touchmove', function(e) { var diff = startY - e.touches[0].clientY; if (diff > 30) footer.classList.remove('collapsed'); else if (diff < -30) footer.classList.add('collapsed'); }); }
 function checkUnread() { fetch(API_BASE+'/notifications/'+currentUser.id).then(function(r){return r.json();}).then(function(r){var d=document.getElementById('notifDot');if(r.unread>0)d.classList.add('has-unread');else d.classList.remove('has-unread');}); fetch(API_BASE+'/conversations/'+currentUser.id).then(function(r){return r.json();}).then(function(r){var d=document.getElementById('msgDot');if(r.success&&r.conversations){var t=r.conversations.reduce(function(s,c){return s+(c.unread||0);},0);if(t>0)d.classList.add('has-unread');else d.classList.remove('has-unread');}}); }
-function loadEvents() {
-    fetch(API_BASE + '/events').then(function(r) { return r.json(); }).then(function(result) {
-        var container = document.getElementById('eventsList');
-        if (result.success && result.events && result.events.length) {
-            container.innerHTML = result.events.map(function(e) {
-                var going = e.attendees && e.attendees.indexOf(currentUser.id) > -1;
-                var count = e.attendees ? e.attendees.length : 0;
-                var d = new Date(e.event_date);
-                var ds = d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
-                var ts = d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-                return '<div class="event-card"><div class="event-img">🎫</div><div class="event-body"><div class="event-title">'+escHtml(e.title)+'</div>'+(e.description?'<div class="event-desc">'+escHtml(e.description.substring(0,120))+'</div>':'')+'<div class="event-meta"><span>📅 '+ds+'</span><span>🕐 '+ts+'</span><span>📍 '+escHtml(e.location||'TBA')+'</span></div><div class="event-foot"><span class="event-count">🎟️ '+count+' attending</span><button class="btn-rsvp '+(going?'btn-going':'btn-attend')+'" onclick="rsvp(\''+e.id+'\')">'+(going?'✅ Going':'🎟️ Attend')+'</button></div></div></div>';
-            }).join('');
-        } else { container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;">No upcoming events</div>'; }
-    });
-}
-function createEvent() {
-    var title = document.getElementById('ename').value.trim();
-    var desc = document.getElementById('edesc').value.trim();
-    var date = document.getElementById('edate').value;
-    var loc = document.getElementById('eloc').value.trim();
-    if (!title || !date) { showToast('Enter name and date'); return; }
-    fetch(API_BASE + '/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id, title: title, description: desc, eventDate: date, location: loc }) })
-    .then(function(r) { return r.json(); }).then(function(result) {
-        if (result.success) { document.getElementById('eventForm').style.display = 'none'; document.getElementById('ename').value=''; document.getElementById('edesc').value=''; document.getElementById('eloc').value=''; loadEvents(); showToast('Event created! 🎫'); }
-    });
-}
-function rsvp(eventId) {
-    fetch(API_BASE + '/events/' + eventId + '/rsvp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id }) })
-    .then(function(r) { return r.json(); }).then(function(result) { if (result.success) { loadEvents(); showToast(result.going ? 'See you there! 🎉' : 'RSVP cancelled'); } });
-}
+function loadEvents() { fetch(API_BASE + '/events').then(function(r) { return r.json(); }).then(function(result) { var container = document.getElementById('eventsList'); if (result.success && result.events && result.events.length) { container.innerHTML = result.events.map(function(e) { var going = e.attendees && e.attendees.indexOf(currentUser.id) > -1; var count = e.attendees ? e.attendees.length : 0; var d = new Date(e.event_date); var ds = d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}); var ts = d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); return '<div class="event-card"><div class="event-img">🎫</div><div class="event-body"><div class="event-title">'+escHtml(e.title)+'</div>'+(e.description?'<div class="event-desc">'+escHtml(e.description.substring(0,120))+'</div>':'')+'<div class="event-meta"><span>📅 '+ds+'</span><span>🕐 '+ts+'</span><span>📍 '+escHtml(e.location||'TBA')+'</span></div><div class="event-foot"><span class="event-count">🎟️ '+count+' attending</span><button class="btn-rsvp '+(going?'btn-going':'btn-attend')+'" onclick="rsvp(\''+e.id+'\')">'+(going?'✅ Going':'🎟️ Attend')+'</button></div></div></div>'; }).join(''); } else { container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;">No upcoming events</div>'; } }); }
+function createEvent() { var title = document.getElementById('ename').value.trim(); var desc = document.getElementById('edesc').value.trim(); var date = document.getElementById('edate').value; var loc = document.getElementById('eloc').value.trim(); if (!title) { showToast('Enter event name'); return; } if (!date) { showToast('Pick a date'); return; } fetch(API_BASE + '/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id, title: title, description: desc, eventDate: new Date(date).toISOString(), location: loc }) }).then(function(r) { return r.json(); }).then(function(result) { if (result.success) { document.getElementById('eventForm').style.display = 'none'; document.getElementById('ename').value=''; document.getElementById('edesc').value=''; document.getElementById('eloc').value=''; loadEvents(); showToast('Event created! 🎫'); } else { showToast(result.error || 'Failed'); } }); }
+function rsvp(eventId) { fetch(API_BASE + '/events/' + eventId + '/rsvp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id }) }).then(function(r) { return r.json(); }).then(function(result) { if (result.success) { loadEvents(); showToast(result.going ? 'See you there! 🎉' : 'RSVP cancelled'); } }); }
 function escHtml(t) { if(!t) return ''; var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
-function showToast(msg) { var t=document.getElementById('toast'); t.textContent=msg; t.style.opacity='1'; setTimeout(function(){t.style.opacity='0';},3000); }
+function showToast(msg) { var t = document.getElementById('toast'); t.textContent = msg; t.style.opacity = '1'; setTimeout(function() { t.style.opacity = '0'; }, 3000); }
 </script>
 </body>
 </html>

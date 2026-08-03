@@ -22,7 +22,7 @@
         .slides-container { height: 100vh; overflow-y: scroll; scroll-snap-type: y mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
         .slide { scroll-snap-align: start; height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; background: #000; }
         .slide-media { width: 100%; height: 100%; object-fit: contain; }
-        .slide-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 80px 16px 20px; background: linear-gradient(transparent, rgba(0,0,0,0.9)); pointer-events: none; z-index: 5; }
+        .slide-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 80px 16px 100px; background: linear-gradient(transparent, rgba(0,0,0,0.9)); pointer-events: none; z-index: 5; }
         .slide-user-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; cursor: pointer; pointer-events: auto; }
         .slide-av { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: bold; color: #000; font-size: 1rem; overflow: hidden; border: 2px solid var(--gold); }
         .slide-av img { width: 100%; height: 100%; object-fit: cover; }
@@ -31,30 +31,16 @@
         .slide-text { font-size: 0.85rem; color: #ddd; line-height: 1.4; }
         .slide-tags { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; }
         .slide-tag { background: rgba(173,216,230,0.2); color: var(--accent); padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; }
-        .slide-location { color: var(--text-muted); font-size: 0.7rem; margin-top: 4px; }
-
-        /* LEFT SIDE ACTION BUTTONS */
-        .slide-actions-left {
-            position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-            display: flex; flex-direction: column; gap: 16px; z-index: 10;
-            opacity: 0; transition: opacity 0.3s;
-        }
+        .slide-actions-left { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 16px; z-index: 10; opacity: 0; transition: opacity 0.3s; }
         .slide:hover .slide-actions-left, .slide.touched .slide-actions-left { opacity: 1; }
-        .slide-action-btn {
-            width: 48px; height: 48px; border-radius: 50%;
-            background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.3);
-            color: #fff; cursor: pointer; font-size: 1.3rem;
-            display: flex; align-items: center; justify-content: center; transition: all 0.2s;
-        }
+        .slide-action-btn { width: 48px; height: 48px; border-radius: 50%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.3); color: #fff; cursor: pointer; font-size: 1.3rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
         .slide-action-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.15); }
         .slide-action-btn.liked { color: #FF6B6B; border-color: #FF6B6B; background: rgba(255,107,107,0.3); }
         .slide-action-btn.bookmarked { color: var(--gold); border-color: var(--gold); background: rgba(255,215,0,0.3); }
         .action-count { font-size: 0.65rem; color: #fff; text-align: center; margin-top: -10px; }
-
         .sound-indicator { position: absolute; top: 60px; right: 16px; z-index: 20; background: rgba(0,0,0,0.6); color: #fff; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 1rem; cursor: pointer; }
         .nav-arrow { position: fixed; right: 20px; z-index: 50; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.3); color: #fff; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
-        .nav-up { top: 80px; }
-        .nav-down { bottom: 160px; }
+        .nav-up { top: 80px; } .nav-down { bottom: 160px; }
         .back-btn { position: fixed; top: 12px; left: 60px; z-index: 150; background: rgba(0,0,0,0.6); border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
         .slide-counter { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 150; color: #fff; font-size: 0.8rem; background: rgba(0,0,0,0.5); padding: 4px 12px; border-radius: 12px; }
         .slide-empty { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #999; padding: 40px; text-align: center; }
@@ -66,117 +52,28 @@
 
 <div class="filter-bar" id="filterBar">
     <button class="back-btn" onclick="window.location.href='centre.html'" style="position:static;flex-shrink:0;">←</button>
-    <button class="filter-chip active" data-tag="all">All</button>
-    <button class="filter-chip" data-tag="trending">🔥 Trending</button>
-    <button class="filter-chip" data-tag="comedy">Comedy</button>
-    <button class="filter-chip" data-tag="funny">Funny</button>
-    <button class="filter-chip" data-tag="news">News</button>
-    <button class="filter-chip" data-tag="animals">Animals</button>
-    <button class="filter-chip" data-tag="sports">Sports</button>
-    <button class="filter-chip" data-tag="music">Music</button>
-    <button class="filter-chip" data-tag="food">Food</button>
-    <button class="filter-chip filter-more-btn" id="filterMoreBtn">More ▼</button>
+    <button class="filter-chip active" data-tag="all">All</button><button class="filter-chip" data-tag="trending">🔥 Trending</button><button class="filter-chip" data-tag="comedy">Comedy</button><button class="filter-chip" data-tag="funny">Funny</button><button class="filter-chip" data-tag="news">News</button><button class="filter-chip" data-tag="animals">Animals</button><button class="filter-chip" data-tag="sports">Sports</button><button class="filter-chip" data-tag="music">Music</button><button class="filter-chip" data-tag="food">Food</button><button class="filter-chip filter-more-btn" id="filterMoreBtn">More ▼</button>
 </div>
 <div class="filter-expanded" id="filterExpanded">
-    <button class="filter-chip" data-tag="gaming">Gaming</button><button class="filter-chip" data-tag="fashion">Fashion</button>
-    <button class="filter-chip" data-tag="nature">Nature</button><button class="filter-chip" data-tag="hollywood">Hollywood</button>
-    <button class="filter-chip" data-tag="nfl">NFL</button><button class="filter-chip" data-tag="nba">NBA</button>
-    <button class="filter-chip" data-tag="football">Football</button><button class="filter-chip" data-tag="rugby">Rugby</button>
-    <button class="filter-chip" data-tag="f1">F1</button><button class="filter-chip" data-tag="tennis">Tennis</button>
-    <button class="filter-chip" data-tag="workout">Work-Out</button><button class="filter-chip" data-tag="diy">DIY</button>
-    <button class="filter-chip" data-tag="garden">Garden</button><button class="filter-chip" data-tag="beauty">Beauty</button>
-    <button class="filter-chip" data-tag="pets">Pets</button><button class="filter-chip" data-tag="tech">Tech</button>
-    <button class="filter-chip" data-tag="travel">Travel</button><button class="filter-chip" data-tag="horror">Horror</button>
-    <button class="filter-chip" data-tag="action">Action</button><button class="filter-chip" data-tag="thriller">Thriller</button>
-    <button class="filter-chip" data-tag="celebs">Celebs</button><button class="filter-chip" data-tag="motorsport">Motor-Sport</button>
-    <button class="filter-chip" data-tag="shopping">Shopping</button><button class="filter-chip" data-tag="hockey">Hockey</button>
+    <button class="filter-chip" data-tag="gaming">Gaming</button><button class="filter-chip" data-tag="fashion">Fashion</button><button class="filter-chip" data-tag="nature">Nature</button><button class="filter-chip" data-tag="hollywood">Hollywood</button><button class="filter-chip" data-tag="nfl">NFL</button><button class="filter-chip" data-tag="nba">NBA</button><button class="filter-chip" data-tag="football">Football</button><button class="filter-chip" data-tag="rugby">Rugby</button><button class="filter-chip" data-tag="f1">F1</button><button class="filter-chip" data-tag="tennis">Tennis</button><button class="filter-chip" data-tag="workout">Work-Out</button><button class="filter-chip" data-tag="diy">DIY</button><button class="filter-chip" data-tag="garden">Garden</button><button class="filter-chip" data-tag="beauty">Beauty</button><button class="filter-chip" data-tag="pets">Pets</button><button class="filter-chip" data-tag="tech">Tech</button><button class="filter-chip" data-tag="travel">Travel</button><button class="filter-chip" data-tag="horror">Horror</button><button class="filter-chip" data-tag="action">Action</button><button class="filter-chip" data-tag="thriller">Thriller</button><button class="filter-chip" data-tag="celebs">Celebs</button><button class="filter-chip" data-tag="motorsport">Motor-Sport</button><button class="filter-chip" data-tag="shopping">Shopping</button><button class="filter-chip" data-tag="hockey">Hockey</button>
 </div>
 
 <div class="slide-counter" id="slideCounter">1 / 0</div>
 <button class="nav-arrow nav-up" id="navUp">▲</button>
 <button class="nav-arrow nav-down" id="navDown">▼</button>
 
-<div class="slides-container" id="slidesContainer">
-    <div class="slide-empty"><div class="slide-empty-icon">🎞️</div><h2>Loading slides...</h2><p>Content from friends appears here</p></div>
-</div>
-
+<div class="slides-container" id="slidesContainer"><div class="slide-empty"><div class="slide-empty-icon">🎞️</div><h2>Loading slides...</h2><p>Content from friends appears here</p></div></div>
 <div id="toast"></div>
 
 <script>
-var API_BASE = '/api';
-var currentUser = null;
-var allPosts = [];
-var currentSlideIndex = 0;
-var activeFilter = 'all';
-
-document.addEventListener('DOMContentLoaded', function() {
-    var stored = localStorage.getItem('muse_user');
-    if (!stored) { window.location.href = 'index.html'; return; }
-    currentUser = JSON.parse(stored);
-    setupUI();
-    loadSlides();
-    document.addEventListener('keydown', function(e) { if (e.key === 'ArrowDown' || e.key === 'j') nextSlide(); if (e.key === 'ArrowUp' || e.key === 'k') prevSlide(); if (e.key === 'Escape') window.location.href = 'centre.html'; });
-});
-
-function setupUI() {
-    document.querySelectorAll('#filterBar .filter-chip, #filterExpanded .filter-chip').forEach(function(chip) { if (chip.id === 'filterMoreBtn') return; chip.addEventListener('click', function() { document.querySelectorAll('.filter-chip').forEach(function(c) { c.classList.remove('active'); }); this.classList.add('active'); activeFilter = this.dataset.tag; document.getElementById('filterExpanded').style.display = 'none'; document.getElementById('filterMoreBtn').textContent = 'More ▼'; filterSlides(); }); });
-    document.getElementById('filterMoreBtn').addEventListener('click', function() { var expanded = document.getElementById('filterExpanded'); if (expanded.style.display === 'none' || expanded.style.display === '') { expanded.style.display = 'flex'; this.textContent = 'Less ▲'; } else { expanded.style.display = 'none'; this.textContent = 'More ▼'; } });
-    document.getElementById('navUp').addEventListener('click', prevSlide);
-    document.getElementById('navDown').addEventListener('click', nextSlide);
-    var container = document.getElementById('slidesContainer');
-    var scrollTimeout;
-    container.addEventListener('scroll', function() { clearTimeout(scrollTimeout); scrollTimeout = setTimeout(function() { currentSlideIndex = Math.round(container.scrollTop / window.innerHeight); updateCounter(); playCurrentVideo(); }, 150); });
-    var touchStartY = 0;
-    container.addEventListener('touchstart', function(e) { touchStartY = e.touches[0].clientY; });
-    container.addEventListener('touchend', function(e) { var diff = touchStartY - e.changedTouches[0].clientY; if (Math.abs(diff) > 50) { if (diff > 0) nextSlide(); else prevSlide(); } });
-}
-
-function loadSlides() {
-    var container = document.getElementById('slidesContainer');
-    fetch(API_BASE + '/posts?type=slideshow').then(function(r) { return r.json(); }).then(function(result) {
-        if (result.success && result.posts && result.posts.length > 0) { allPosts = result.posts; filterSlides(); }
-        else { fetch(API_BASE + '/posts').then(function(r) { return r.json(); }).then(function(allResult) { if (allResult.success && allResult.posts) { allPosts = allResult.posts.filter(function(p) { return p.media || p.slideshow; }); if (allPosts.length === 0) { container.innerHTML = '<div class="slide-empty"><div class="slide-empty-icon">🎞️</div><h2>No slides yet</h2><p>Posts with media sent to slideshow appear here</p><button onclick="window.location.href=\'centre.html\'" style="margin-top:16px;padding:12px 32px;background:#ADD8E6;color:#000;border:none;border-radius:25px;cursor:pointer;font-weight:600;">Go to Centre</button></div>'; return; } filterSlides(); } }); }
-    }).catch(function() { container.innerHTML = '<div class="slide-empty"><div class="slide-empty-icon">⚠️</div><h2>Cannot load slides</h2><p>Make sure server is running</p><button onclick="loadSlides()" style="margin-top:12px;padding:10px 24px;background:#ADD8E6;color:#000;border:none;border-radius:20px;cursor:pointer;">Retry</button></div>'; });
-}
-
-function filterSlides() {
-    var container = document.getElementById('slidesContainer');
-    var filtered = allPosts;
-    if (activeFilter !== 'all') { filtered = allPosts.filter(function(p) { var text = (p.text || '').toLowerCase(); return text.indexOf('#' + activeFilter) !== -1 || text.indexOf(activeFilter) !== -1; }); }
-    if (filtered.length === 0) { container.innerHTML = '<div class="slide-empty"><div class="slide-empty-icon">🔍</div><h2>No ' + activeFilter + ' content</h2><p>Try a different filter</p></div>'; return; }
-    container.innerHTML = filtered.map(function(post, index) {
-        var mediaFiles = post.media ? post.media.split(',') : [];
-        var tags = (post.text || '').match(/#[\w-]+/g) || [];
-        var locationMatch = (post.text || '').match(/📍\s*(.+)/);
-        var location = locationMatch ? locationMatch[1] : '';
-        var isVideo = post.media_type === 'video';
-        return '<div class="slide" id="slide-' + index + '" onclick="toggleTouch(this)">' +
-            (isVideo ? '<video class="slide-media" src="' + post.media + '" loop playsinline></video>' : mediaFiles[0] ? '<img class="slide-media" src="' + mediaFiles[0] + '" alt="Slide">' : '<div style="color:#999;text-align:center;padding:40px;">No media</div>') +
-            (isVideo ? '<div class="sound-indicator" id="soundIcon-' + index + '" onclick="event.stopPropagation();toggleSound(\'slide-' + index + '\', this)">🔇</div>' : '') +
-            '<div class="slide-actions-left">' +
-                '<div style="text-align:center;"><button class="slide-action-btn" onclick="event.stopPropagation();likePost(\'' + post.id + '\', this)">❤️</button><div class="action-count">' + (post.likes_count || 0) + '</div></div>' +
-                '<div style="text-align:center;"><button class="slide-action-btn" onclick="event.stopPropagation();bookmarkPost(\'' + post.id + '\', this)">🔖</button></div>' +
-                '<button class="slide-action-btn" onclick="event.stopPropagation();sharePost()">↗️</button>' +
-                '<button class="slide-action-btn" onclick="event.stopPropagation();openComments(\'' + post.id + '\')">💬</button>' +
-                (post.user_id === currentUser.id ? '<button class="slide-action-btn" onclick="event.stopPropagation();deleteSlide(\'' + post.id + '\')">🗑️</button>' : '') +
-            '</div>' +
-            '<div class="slide-overlay">' +
-                '<div class="slide-user-row" onclick="event.stopPropagation();window.location.href=\'profile.html?user=' + post.user_id + '\'">' +
-                    '<div class="slide-av">' + (post.avatar ? '<img src="' + post.avatar + '">' : (post.tag_name || '?')[0].toUpperCase()) + '</div>' +
-                    '<div><div class="slide-username">@' + post.tag_name + ' <span class="slide-flag">' + (post.country_flag || '') + '</span></div></div>' +
-                '</div>' +
-                '<div class="slide-text">' + (post.text || '') + '</div>' +
-                (tags.length > 0 ? '<div class="slide-tags">' + tags.map(function(t) { return '<span class="slide-tag">' + t + '</span>'; }).join('') + '</div>' : '') +
-                (location ? '<div class="slide-location">📍 ' + location + '</div>' : '') +
-            '</div></div>';
-    }).join('');
-    currentSlideIndex = 0; container.scrollTop = 0; updateCounter();
-    setTimeout(function() { playCurrentVideo(); }, 500);
-}
-
+var API_BASE = '/api'; var currentUser = null; var allPosts = []; var currentSlideIndex = 0; var activeFilter = 'all';
+document.addEventListener('DOMContentLoaded', function() { var stored = localStorage.getItem('muse_user'); if (!stored) { window.location.href = 'index.html'; return; } currentUser = JSON.parse(stored); setupUI(); loadSlides(); document.addEventListener('keydown', function(e) { if (e.key === 'ArrowDown' || e.key === 'j') nextSlide(); if (e.key === 'ArrowUp' || e.key === 'k') prevSlide(); if (e.key === 'Escape') window.location.href = 'centre.html'; }); });
+function setupUI() { document.querySelectorAll('#filterBar .filter-chip, #filterExpanded .filter-chip').forEach(function(chip) { if (chip.id === 'filterMoreBtn') return; chip.addEventListener('click', function() { document.querySelectorAll('.filter-chip').forEach(function(c) { c.classList.remove('active'); }); this.classList.add('active'); activeFilter = this.dataset.tag; document.getElementById('filterExpanded').style.display = 'none'; document.getElementById('filterMoreBtn').textContent = 'More ▼'; filterSlides(); }); }); document.getElementById('filterMoreBtn').addEventListener('click', function() { var expanded = document.getElementById('filterExpanded'); if (expanded.style.display === 'none' || expanded.style.display === '') { expanded.style.display = 'flex'; this.textContent = 'Less ▲'; } else { expanded.style.display = 'none'; this.textContent = 'More ▼'; } }); document.getElementById('navUp').addEventListener('click', prevSlide); document.getElementById('navDown').addEventListener('click', nextSlide); var container = document.getElementById('slidesContainer'); var scrollTimeout; container.addEventListener('scroll', function() { clearTimeout(scrollTimeout); scrollTimeout = setTimeout(function() { currentSlideIndex = Math.round(container.scrollTop / window.innerHeight); updateCounter(); playCurrentVideo(); }, 150); }); var touchStartY = 0; container.addEventListener('touchstart', function(e) { touchStartY = e.touches[0].clientY; }); container.addEventListener('touchend', function(e) { var diff = touchStartY - e.changedTouches[0].clientY; if (Math.abs(diff) > 50) { if (diff > 0) nextSlide(); else prevSlide(); } }); }
+function loadSlides() { var container = document.getElementById('slidesContainer'); fetch(API_BASE + '/posts?type=slideshow').then(function(r) { return r.json(); }).then(function(result) { if (result.success && result.posts && result.posts.length > 0) { allPosts = result.posts; filterSlides(); } else { fetch(API_BASE + '/posts').then(function(r) { return r.json(); }).then(function(allResult) { if (allResult.success && allResult.posts) { allPosts = allResult.posts.filter(function(p) { return p.media || p.slideshow; }); if (allPosts.length === 0) { container.innerHTML = '<div class="slide-empty"><div class="slide-empty-icon">🎞️</div><h2>No slides yet</h2><p>Posts with media sent to slideshow appear here</p><button onclick="window.location.href=\'centre.html\'" style="margin-top:16px;padding:12px 32px;background:#ADD8E6;color:#000;border:none;border-radius:25px;cursor:pointer;font-weight:600;">Go to Centre</button></div>'; return; } filterSlides(); } }); } }).catch(function() { container.innerHTML = '<div class="slide-empty"><div class="slide-empty-icon">⚠️</div><h2>Cannot load slides</h2><p>Make sure server is running</p><button onclick="loadSlides()" style="margin-top:12px;padding:10px 24px;background:#ADD8E6;color:#000;border:none;border-radius:20px;cursor:pointer;">Retry</button></div>'; }); }
+function filterSlides() { var container = document.getElementById('slidesContainer'); var filtered = allPosts; if (activeFilter !== 'all') { filtered = allPosts.filter(function(p) { var text = (p.text || '').toLowerCase(); return text.indexOf('#' + activeFilter) !== -1 || text.indexOf(activeFilter) !== -1; }); } if (filtered.length === 0) { container.innerHTML = '<div class="slide-empty"><div class="slide-empty-icon">🔍</div><h2>No ' + activeFilter + ' content</h2><p>Try a different filter</p></div>'; return; } container.innerHTML = filtered.map(function(post, index) { var mediaFiles = post.media ? post.media.split(',') : []; var tags = (post.text || '').match(/#[\w-]+/g) || []; var locationMatch = (post.text || '').match(/📍\s*(.+)/); var location = locationMatch ? locationMatch[1] : ''; var isVideo = post.media_type === 'video'; return '<div class="slide" id="slide-' + index + '" onclick="toggleTouch(this)">' + (isVideo ? '<video class="slide-media" src="' + post.media + '" loop playsinline></video>' : mediaFiles[0] ? '<img class="slide-media" src="' + mediaFiles[0] + '" alt="Slide">' : '<div style="color:#999;text-align:center;padding:40px;">No media</div>') + (isVideo ? '<div class="sound-indicator" id="soundIcon-' + index + '" onclick="event.stopPropagation();toggleSound(\'slide-' + index + '\', this)">🔇</div>' : '') + '<div class="slide-actions-left"><div style="text-align:center;"><button class="slide-action-btn" onclick="event.stopPropagation();likePost(\'' + post.id + '\', this)">❤️</button><div class="action-count">' + (post.likes_count || 0) + '</div></div><div style="text-align:center;"><button class="slide-action-btn" onclick="event.stopPropagation();bookmarkPost(\'' + post.id + '\', this)">🔖</button></div><button class="slide-action-btn" onclick="event.stopPropagation();sharePost()">↗️</button><button class="slide-action-btn" onclick="event.stopPropagation();openComments(\'' + post.id + '\')">💬</button>' + (post.user_id === currentUser.id ? '<button class="slide-action-btn" onclick="event.stopPropagation();deleteSlide(\'' + post.id + '\')">🗑️</button>' : '') + '</div><div class="slide-overlay"><div class="slide-user-row" onclick="event.stopPropagation();window.location.href=\'profile.html?user=' + post.user_id + '\'" style="cursor:pointer;pointer-events:auto;"><div class="slide-av">' + (post.avatar ? '<img src="' + post.avatar + '">' : (post.tag_name || '?')[0].toUpperCase()) + '</div><div><div class="slide-username">@' + post.tag_name + ' <span class="slide-flag">' + (post.country_flag || '') + '</span></div></div></div><div class="slide-text">' + (post.text || '') + '</div>' + (tags.length > 0 ? '<div class="slide-tags">' + tags.map(function(t) { return '<span class="slide-tag">' + t + '</span>'; }).join('') + '</div>' : '') + (location ? '<div class="slide-location">📍 ' + location + '</div>' : '') + '</div></div>'; }).join(''); currentSlideIndex = 0; container.scrollTop = 0; updateCounter(); setTimeout(function() { playCurrentVideo(); }, 500); }
 function toggleTouch(slide) { slide.classList.toggle('touched'); var video = slide.querySelector('video'); if (video) { if (video.paused) video.play().catch(function() {}); else video.pause(); } }
 function toggleSound(slideId, icon) { var slide = document.getElementById(slideId); if (!slide) return; var video = slide.querySelector('video'); if (!video) return; video.muted = !video.muted; icon.textContent = video.muted ? '🔇' : '🔊'; }
-function nextSlide() { var container = document.getElementById('slidesContainer'); var slides = container.querySelectorAll('.slide'); var maxIndex = slides.length - 1; if (currentSlideIndex < maxIndex) { currentSlideIndex++; container.scrollTo({ top: currentSlideIndex * window.innerHeight, behavior: 'smooth' }); updateCounter(); setTimeout(function() { playCurrentVideo(); }, 500); } }
+function nextSlide() { var container = document.getElementById('slidesContainer'); var maxIndex = container.querySelectorAll('.slide').length - 1; if (currentSlideIndex < maxIndex) { currentSlideIndex++; container.scrollTo({ top: currentSlideIndex * window.innerHeight, behavior: 'smooth' }); updateCounter(); setTimeout(function() { playCurrentVideo(); }, 500); } }
 function prevSlide() { if (currentSlideIndex > 0) { currentSlideIndex--; document.getElementById('slidesContainer').scrollTo({ top: currentSlideIndex * window.innerHeight, behavior: 'smooth' }); updateCounter(); setTimeout(function() { playCurrentVideo(); }, 500); } }
 function playCurrentVideo() { document.querySelectorAll('.slide video').forEach(function(v) { v.pause(); }); var cs = document.getElementById('slide-' + currentSlideIndex); if (cs) { var video = cs.querySelector('video'); if (video) { video.muted = false; video.play().catch(function() {}); var icon = document.getElementById('soundIcon-' + currentSlideIndex); if (icon) icon.textContent = video.muted ? '🔇' : '🔊'; } } }
 function updateCounter() { var total = document.querySelectorAll('.slide').length; document.getElementById('slideCounter').textContent = (currentSlideIndex + 1) + ' / ' + total; }

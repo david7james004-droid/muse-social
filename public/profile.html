@@ -44,6 +44,7 @@
         .stat-value.coins { color: var(--gold); }
         .edit-profile-btn { display: block; margin: 8px auto; padding: 8px 32px; background: transparent; border: 1px solid var(--accent); color: var(--accent); border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; font-family: inherit; transition: all 0.2s; }
         .edit-profile-btn:hover { background: var(--accent); color: #000; }
+        .add-friend-btn { display: block; margin: 8px auto; padding: 8px 32px; background: var(--accent); color: #000; border: none; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; font-family: inherit; display: none; }
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 500; align-items: center; justify-content: center; padding: 20px; }
         .modal-overlay.active { display: flex; }
         .modal-box { background: var(--bg-darker); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 400px; }
@@ -94,7 +95,7 @@
         <div class="nav-left">
             <button class="muse-menu-btn" id="museMenuBtn"><svg viewBox="0 0 40 40" class="nav-logo-icon"><circle cx="20" cy="20" r="18" fill="#000" stroke="#FFD700" stroke-width="1.5"/><text x="20" y="26" text-anchor="middle" font-family="Arial" font-weight="300" font-size="20" fill="#ADD8E6">M</text></svg></button>
             <ul class="dropdown-menu" id="dropdownMenu">
-                <li><a href="centre.html">🏠 Centre</a></li><li><a href="hot.html">🔥 Hot</a></li><li><a href="profile.html">👤 Profile</a></li><li><a href="friends.html">👫 Friends</a></li><li><a href="messages.html">💬 Messages</a></li><li><a href="notifications.html">🔔 Notifications</a></li><li><a href="slideshow.html">🎞️ Slideshow</a></li><li><a href="wallet.html">💰 Wallet</a></li><li><a href="groups.html">👥 Groups</a></li><li><a href="events.html">🎫 Events</a></li><li><a href="polls.html">📊 Polls</a></li><li><a href="stories.html">📖 Stories</a></li><li><a href="search.html">🔍 Search</a></li><li><a href="media-uploads.html">📷 Uploads</a></li><li><a href="settings.html">⚙️ Settings</a></li>
+                <li><a href="centre.html">🏠 Centre</a></li><li><a href="profile.html">👤 Profile</a></li><li><a href="friends.html">👫 Friends</a></li><li><a href="messages.html">💬 Messages</a></li><li><a href="notifications.html">🔔 Notifications</a></li><li><a href="slideshow.html">🎞️ Slideshow</a></li><li><a href="media-uploads.html">📷 Uploads</a></li><li><a href="settings.html">⚙️ Settings</a></li>
             </ul>
         </div>
         <div class="nav-center"><h1 class="page-title">Profile</h1></div>
@@ -108,8 +109,9 @@
         <div class="profile-bio" id="profileBio">No bio yet</div>
         <div class="profile-stats"><div class="stat-item"><div class="stat-value" id="statPosts">0</div><div class="stat-label">Posts</div></div><div class="stat-item"><div class="stat-value" id="statFriends">0</div><div class="stat-label">Friends</div></div><div class="stat-item"><div class="stat-value coins" id="statCoins">0</div><div class="stat-label">Coins</div></div></div>
         <button class="edit-profile-btn" id="editProfileBtn">✏️ Edit Profile</button>
+        <button class="add-friend-btn" id="addFriendBtn">👫 Add Friend</button>
     </div>
-    <div class="section-title"><span>My Posts</span><span class="section-count" id="postCount">0 posts</span></div>
+    <div class="section-title"><span id="postsSectionTitle">Posts</span><span class="section-count" id="postCount">0 posts</span></div>
     <div class="profile-posts" id="profilePosts"><p style="color:var(--text-muted);text-align:center;padding:40px;">No posts yet</p></div>
 </div>
 
@@ -133,13 +135,133 @@
 var API_BASE = '/api';
 var currentUser = null;
 var postToDelete = null;
-document.addEventListener('DOMContentLoaded', function() { var stored = localStorage.getItem('muse_user'); if (!stored) { window.location.href = 'index.html'; return; } currentUser = JSON.parse(stored); setupUI(); loadProfile(); loadUserPosts(); checkUnread(); setInterval(checkUnread, 15000); });
-function setupUI() { document.getElementById('museMenuBtn').addEventListener('click', function(e) { e.stopPropagation(); document.getElementById('dropdownMenu').classList.toggle('show'); }); document.addEventListener('click', function() { document.getElementById('dropdownMenu').classList.remove('show'); }); document.getElementById('editProfileBtn').addEventListener('click', function() { document.getElementById('editTagName').value = currentUser.tag_name || ''; document.getElementById('editBio').value = currentUser.bio || ''; var sel = document.getElementById('editCountry'); for (var i=0;i<sel.options.length;i++) { if(sel.options[i].value===currentUser.country_flag){sel.selectedIndex=i;break;} } document.getElementById('editModal').classList.add('active'); }); document.getElementById('cancelEditBtn').addEventListener('click', function() { document.getElementById('editModal').classList.remove('active'); }); document.getElementById('editModal').addEventListener('click', function(e) { if(e.target===this)this.classList.remove('active'); }); document.getElementById('saveEditBtn').addEventListener('click', saveProfile); document.getElementById('avatarWrapper').addEventListener('click', function() { document.getElementById('avatarFileInput').click(); }); document.getElementById('avatarEditBtn').addEventListener('click', function(e) { e.stopPropagation(); document.getElementById('avatarFileInput').click(); }); document.getElementById('avatarFileInput').addEventListener('change', uploadAvatar); document.getElementById('cancelDeleteBtn').addEventListener('click', function() { document.getElementById('deleteModal').classList.remove('active'); }); document.getElementById('confirmDeleteBtn').addEventListener('click', confirmDeletePost); document.getElementById('deleteModal').addEventListener('click', function(e) { if(e.target===this)this.classList.remove('active'); }); document.getElementById('footerHandle').addEventListener('click', function() { document.getElementById('footerDashboard').classList.toggle('collapsed'); }); var startY=0,footer=document.getElementById('footerDashboard'); footer.addEventListener('touchstart',function(e){startY=e.touches[0].clientY;}); footer.addEventListener('touchmove',function(e){var diff=startY-e.touches[0].clientY;if(diff>30)footer.classList.remove('collapsed');else if(diff<-30)footer.classList.add('collapsed');}); }
+var viewingUserId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    var stored = localStorage.getItem('muse_user');
+    if (!stored) { window.location.href = 'index.html'; return; }
+    currentUser = JSON.parse(stored);
+    
+    // Check if viewing another user's profile
+    var params = new URLSearchParams(window.location.search);
+    viewingUserId = params.get('user');
+    
+    setupUI();
+    loadProfile();
+    loadUserPosts();
+    checkUnread();
+    setInterval(checkUnread, 15000);
+});
+
+function setupUI() {
+    document.getElementById('museMenuBtn').addEventListener('click', function(e) { e.stopPropagation(); document.getElementById('dropdownMenu').classList.toggle('show'); });
+    document.addEventListener('click', function() { document.getElementById('dropdownMenu').classList.remove('show'); });
+    
+    // If viewing another user's profile
+    if (viewingUserId && viewingUserId !== currentUser.id) {
+        document.getElementById('editProfileBtn').style.display = 'none';
+        document.getElementById('avatarEditBtn').style.display = 'none';
+        document.getElementById('avatarWrapper').style.cursor = 'default';
+        document.getElementById('postsSectionTitle').textContent = 'Their Posts';
+        
+        // Show Add Friend button
+        var addBtn = document.getElementById('addFriendBtn');
+        addBtn.style.display = 'block';
+        addBtn.addEventListener('click', function() {
+            fetch(API_BASE + '/profile/' + viewingUserId).then(function(r) { return r.json(); }).then(function(result) {
+                if (result.success) {
+                    var tagName = result.user.tag_name;
+                    fetch(API_BASE + '/friends/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id, friendTagName: tagName }) })
+                    .then(function(r) { return r.json(); }).then(function(r) { showToast(r.success ? 'Friend request sent! ✅' : (r.error || 'Failed')); });
+                }
+            });
+        });
+        
+        // Remove click handlers for avatar
+        document.getElementById('avatarWrapper').onclick = null;
+    } else {
+        // Own profile - setup edit
+        document.getElementById('editProfileBtn').addEventListener('click', function() {
+            document.getElementById('editTagName').value = currentUser.tag_name || '';
+            document.getElementById('editBio').value = currentUser.bio || '';
+            var sel = document.getElementById('editCountry');
+            for (var i=0;i<sel.options.length;i++) { if(sel.options[i].value===currentUser.country_flag){sel.selectedIndex=i;break;} }
+            document.getElementById('editModal').classList.add('active');
+        });
+        document.getElementById('cancelEditBtn').addEventListener('click', function() { document.getElementById('editModal').classList.remove('active'); });
+        document.getElementById('editModal').addEventListener('click', function(e) { if(e.target===this)this.classList.remove('active'); });
+        document.getElementById('saveEditBtn').addEventListener('click', saveProfile);
+        document.getElementById('avatarWrapper').addEventListener('click', function() { document.getElementById('avatarFileInput').click(); });
+        document.getElementById('avatarEditBtn').addEventListener('click', function(e) { e.stopPropagation(); document.getElementById('avatarFileInput').click(); });
+        document.getElementById('avatarFileInput').addEventListener('change', uploadAvatar);
+    }
+    
+    document.getElementById('cancelDeleteBtn').addEventListener('click', function() { document.getElementById('deleteModal').classList.remove('active'); });
+    document.getElementById('confirmDeleteBtn').addEventListener('click', confirmDeletePost);
+    document.getElementById('deleteModal').addEventListener('click', function(e) { if(e.target===this)this.classList.remove('active'); });
+    document.getElementById('footerHandle').addEventListener('click', function() { document.getElementById('footerDashboard').classList.toggle('collapsed'); });
+    var startY=0,footer=document.getElementById('footerDashboard');
+    footer.addEventListener('touchstart',function(e){startY=e.touches[0].clientY;});
+    footer.addEventListener('touchmove',function(e){var diff=startY-e.touches[0].clientY;if(diff>30)footer.classList.remove('collapsed');else if(diff<-30)footer.classList.add('collapsed');});
+}
+
 function checkUnread() { fetch(API_BASE+'/notifications/'+currentUser.id).then(function(r){return r.json();}).then(function(r){var d=document.getElementById('notifDot');if(r.unread>0){d.classList.add('has-unread');}else{d.classList.remove('has-unread');}}); fetch(API_BASE+'/conversations/'+currentUser.id).then(function(r){return r.json();}).then(function(r){var d=document.getElementById('msgDot');if(r.success&&r.conversations){var t=r.conversations.reduce(function(s,c){return s+(c.unread||0);},0);if(t>0){d.classList.add('has-unread');}else{d.classList.remove('has-unread');}}}); }
-function loadProfile() { fetch(API_BASE+'/profile/'+currentUser.id).then(function(r){return r.json();}).then(function(result) { if(result.success){var u=result.user;currentUser.tag_name=u.tag_name;currentUser.avatar=u.avatar;currentUser.bio=u.bio;currentUser.country_flag=u.country_flag;currentUser.muse_coins=u.muse_coins;localStorage.setItem('muse_user',JSON.stringify(currentUser));document.getElementById('profileTagName').textContent='@'+u.tag_name;document.getElementById('profileFlag').textContent=u.country_flag||'';document.getElementById('profileBio').textContent=u.bio||'No bio yet';if(u.avatar){document.getElementById('avatarText').style.display='none';document.getElementById('avatarImg').src=u.avatar;document.getElementById('avatarImg').style.display='block';}else{document.getElementById('avatarText').style.display='block';document.getElementById('avatarText').textContent=u.tag_name[0].toUpperCase();document.getElementById('avatarImg').style.display='none';}document.getElementById('statPosts').textContent=result.stats.posts||0;document.getElementById('statFriends').textContent=result.stats.friends||0;document.getElementById('statCoins').textContent=u.muse_coins||0;} }); }
-function loadUserPosts() { fetch(API_BASE+'/posts?type=friends&userId='+currentUser.id).then(function(r){return r.json();}).then(function(result) { if(result.success&&result.posts){var myPosts=result.posts.filter(function(p){return p.user_id===currentUser.id;});document.getElementById('postCount').textContent=myPosts.length+' posts';document.getElementById('statPosts').textContent=myPosts.length;var container=document.getElementById('profilePosts');if(myPosts.length===0){container.innerHTML='<p style="color:var(--text-muted);text-align:center;padding:40px;">No posts yet</p>';return;}container.innerHTML=myPosts.map(function(post){var files=post.media?post.media.split(','):[];var isSingle=files.length===1;var mediaHTML='';if(files.length>0){mediaHTML='<div class="post-card-media '+(isSingle?'single':'')+'">';files.forEach(function(src){if(post.media_type==='video'){mediaHTML+='<video src="'+src+'" controls></video>';}else{mediaHTML+='<img src="'+src+'" onclick="openLightbox(\''+src+'\')">';}});mediaHTML+='</div>';}return'<div class="post-card"><button class="post-card-delete" onclick="openDeleteModal(\''+post.id+'\')">🗑️ Delete</button><div class="post-card-header"><span class="post-card-time">'+timeAgo(post.created_at)+'</span>'+(post.slideshow?'<span style="background:#FFD700;color:#000;padding:2px 8px;border-radius:10px;font-size:0.65rem;">🎞️</span>':'')+'</div>'+(post.text?'<div class="post-card-text">'+post.text+'</div>':'')+mediaHTML+'<div class="post-card-stats"><span>❤️ '+(post.likes_count||0)+'</span><span>💬 '+(post.comments_count||0)+'</span></div></div>';}).join('');} }); }
-function saveProfile() { var tagName=document.getElementById('editTagName').value.trim(),bio=document.getElementById('editBio').value.trim(),countryFlag=document.getElementById('editCountry').value; if(!tagName||tagName.length<2){showToast('Tag name must be at least 2 characters');return;} var formData=new FormData();formData.append('userId',currentUser.id);formData.append('bio',bio);formData.append('tagName',tagName);formData.append('countryFlag',countryFlag); fetch(API_BASE+'/profile/update',{method:'POST',body:formData}).then(function(r){return r.json();}).then(function(result){if(result.success){document.getElementById('editModal').classList.remove('active');loadProfile();showToast('Profile updated! ✅');}else{showToast(result.error||'Failed');}}); }
-function uploadAvatar(e) { var file=e.target.files[0];if(!file)return;if(file.size>10*1024*1024){showToast('Image must be under 10MB');return;} var formData=new FormData();formData.append('userId',currentUser.id);formData.append('bio',currentUser.bio||'');formData.append('tagName',currentUser.tag_name);formData.append('avatar',file); fetch(API_BASE+'/profile/update',{method:'POST',body:formData}).then(function(r){return r.json();}).then(function(result){if(result.success){loadProfile();showToast('Avatar updated! 📷');}}); }
+
+function loadProfile() {
+    var userId = viewingUserId || currentUser.id;
+    fetch(API_BASE + '/profile/' + userId).then(function(r) { return r.json(); }).then(function(result) {
+        if (result.success) {
+            var u = result.user;
+            if (!viewingUserId || viewingUserId === currentUser.id) {
+                currentUser.tag_name = u.tag_name; currentUser.avatar = u.avatar; currentUser.bio = u.bio; currentUser.country_flag = u.country_flag; currentUser.muse_coins = u.muse_coins;
+                localStorage.setItem('muse_user', JSON.stringify(currentUser));
+            }
+            document.getElementById('profileTagName').textContent = '@' + u.tag_name;
+            document.getElementById('profileFlag').textContent = u.country_flag || '';
+            document.getElementById('profileBio').textContent = u.bio || 'No bio yet';
+            if (u.avatar) { document.getElementById('avatarText').style.display = 'none'; document.getElementById('avatarImg').src = u.avatar; document.getElementById('avatarImg').style.display = 'block'; }
+            else { document.getElementById('avatarText').style.display = 'block'; document.getElementById('avatarText').textContent = u.tag_name[0].toUpperCase(); document.getElementById('avatarImg').style.display = 'none'; }
+            document.getElementById('statPosts').textContent = result.stats.posts || 0;
+            document.getElementById('statFriends').textContent = result.stats.friends || 0;
+            document.getElementById('statCoins').textContent = u.muse_coins || 0;
+        }
+    });
+}
+
+function loadUserPosts() {
+    var userId = viewingUserId || currentUser.id;
+    fetch(API_BASE + '/posts?type=friends&userId=' + currentUser.id).then(function(r) { return r.json(); }).then(function(result) {
+        if (result.success && result.posts) {
+            var userPosts = result.posts.filter(function(p) { return p.user_id === userId; });
+            document.getElementById('postCount').textContent = userPosts.length + ' posts';
+            document.getElementById('statPosts').textContent = userPosts.length;
+            var container = document.getElementById('profilePosts');
+            if (userPosts.length === 0) { container.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:40px;">No posts yet</p>'; return; }
+            var isOwnProfile = !viewingUserId || viewingUserId === currentUser.id;
+            container.innerHTML = userPosts.map(function(post) {
+                var files = post.media ? post.media.split(',') : [];
+                var isSingle = files.length === 1;
+                var mediaHTML = '';
+                if (files.length > 0) { mediaHTML = '<div class="post-card-media '+(isSingle?'single':'')+'">'; files.forEach(function(src) { if(post.media_type==='video'){mediaHTML+='<video src="'+src+'" controls></video>';}else{mediaHTML+='<img src="'+src+'" onclick="openLightbox(\''+src+'\')">';} }); mediaHTML += '</div>'; }
+                return '<div class="post-card">' + (isOwnProfile ? '<button class="post-card-delete" onclick="openDeleteModal(\''+post.id+'\')">🗑️ Delete</button>' : '') + '<div class="post-card-header"><span class="post-card-time">'+timeAgo(post.created_at)+'</span>'+(post.slideshow?'<span style="background:#FFD700;color:#000;padding:2px 8px;border-radius:10px;font-size:0.65rem;">🎞️</span>':'')+'</div>'+(post.text?'<div class="post-card-text">'+post.text+'</div>':'')+mediaHTML+'<div class="post-card-stats"><span>❤️ '+(post.likes_count||0)+'</span><span>💬 '+(post.comments_count||0)+'</span></div></div>';
+            }).join('');
+        }
+    });
+}
+
+function saveProfile() {
+    var tagName=document.getElementById('editTagName').value.trim(),bio=document.getElementById('editBio').value.trim(),countryFlag=document.getElementById('editCountry').value;
+    if(!tagName||tagName.length<2){showToast('Tag name must be at least 2 characters');return;}
+    var formData=new FormData();formData.append('userId',currentUser.id);formData.append('bio',bio);formData.append('tagName',tagName);formData.append('countryFlag',countryFlag);
+    fetch(API_BASE+'/profile/update',{method:'POST',body:formData}).then(function(r){return r.json();}).then(function(result){if(result.success){document.getElementById('editModal').classList.remove('active');loadProfile();showToast('Profile updated! ✅');}else{showToast(result.error||'Failed');}});
+}
+
+function uploadAvatar(e) {
+    var file=e.target.files[0];if(!file)return;if(file.size>10*1024*1024){showToast('Image must be under 10MB');return;}
+    var formData=new FormData();formData.append('userId',currentUser.id);formData.append('bio',currentUser.bio||'');formData.append('tagName',currentUser.tag_name);formData.append('avatar',file);
+    fetch(API_BASE+'/profile/update',{method:'POST',body:formData}).then(function(r){return r.json();}).then(function(result){if(result.success){loadProfile();showToast('Avatar updated! 📷');}});
+}
+
 function openDeleteModal(postId){postToDelete=postId;document.getElementById('deleteModal').classList.add('active');}
 function confirmDeletePost(){if(!postToDelete)return;fetch(API_BASE+'/posts/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:currentUser.id,postId:postToDelete})}).then(function(r){return r.json();}).then(function(result){if(result.success){document.getElementById('deleteModal').classList.remove('active');postToDelete=null;loadUserPosts();loadProfile();showToast('Post deleted 🗑️');}});}
 function openLightbox(src){document.getElementById('lightboxImg').src=src;document.getElementById('lightbox').classList.add('active');}

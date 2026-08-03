@@ -56,8 +56,8 @@
     <header class="top-nav">
         <div class="nav-left">
             <button class="muse-menu-btn" id="museMenuBtn"><svg viewBox="0 0 40 40" class="nav-logo-icon"><circle cx="20" cy="20" r="18" fill="#000" stroke="#FFD700" stroke-width="1.5"/><text x="20" y="26" text-anchor="middle" font-family="Arial" font-weight="300" font-size="20" fill="#ADD8E6">M</text></svg></button>
-           <ul class="dropdown-menu" id="dropdownMenu">
-                <li><a href="centre.html">🏠 Centre</a></li><li><a href="hot.html">🔥 Hot</a></li><li><a href="profile.html">👤 Profile</a></li><li><a href="friends.html">👫 Friends</a></li><li><a href="messages.html">💬 Messages</a></li><li><a href="notifications.html">🔔 Notifications</a></li><li><a href="slideshow.html">🎞️ Slideshow</a></li><li><a href="wallet.html">💰 Wallet</a></li><li><a href="groups.html">👥 Groups</a></li><li><a href="events.html">🎫 Events</a></li><li><a href="polls.html">📊 Polls</a></li><li><a href="stories.html">📖 Stories</a></li><li><a href="search.html">🔍 Search</a></li><li><a href="media-uploads.html">📷 Uploads</a></li><li><a href="settings.html">⚙️ Settings</a></li>
+            <ul class="dropdown-menu" id="dropdownMenu">
+                <li><a href="centre.html">🏠 Centre</a></li><li><a href="profile.html">👤 Profile</a></li><li><a href="friends.html">👫 Friends</a></li><li><a href="messages.html">💬 Messages</a></li><li><a href="notifications.html">🔔 Notifications</a></li><li><a href="slideshow.html">🎞️ Slideshow</a></li><li><a href="media-uploads.html">📷 Uploads</a></li><li><a href="settings.html">⚙️ Settings</a></li>
             </ul>
         </div>
         <div class="nav-center"><h1 class="page-title">Notifications</h1></div>
@@ -78,12 +78,25 @@
 </footer>
 
 <script>
-var API_BASE = '/api';
-var currentUser = null;
+var API_BASE = '/api'; var currentUser = null;
 document.addEventListener('DOMContentLoaded', function() { var stored = localStorage.getItem('muse_user'); if (!stored) { window.location.href = 'index.html'; return; } currentUser = JSON.parse(stored); setupUI(); loadNotifications(); });
-function setupUI() { document.getElementById('museMenuBtn').addEventListener('click', function(e) { e.stopPropagation(); document.getElementById('dropdownMenu').classList.toggle('show'); }); document.addEventListener('click', function() { document.getElementById('dropdownMenu').classList.remove('show'); }); document.getElementById('markAllRead').addEventListener('click', function() { fetch(API_BASE+'/notifications/read', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id }) }).then(function() { loadNotifications(); }); }); document.getElementById('footerHandle').addEventListener('click', function() { document.getElementById('footerDashboard').classList.toggle('collapsed'); }); var startY = 0; var footer = document.getElementById('footerDashboard'); footer.addEventListener('touchstart', function(e) { startY = e.touches[0].clientY; }); footer.addEventListener('touchmove', function(e) { var diff = startY - e.touches[0].clientY; if (diff > 30) footer.classList.remove('collapsed'); else if (diff < -30) footer.classList.add('collapsed'); }); }
-function loadNotifications() { fetch(API_BASE+'/notifications/'+currentUser.id).then(function(r){return r.json();}).then(function(result) { var container = document.getElementById('notifList'); if (result.success && result.notifications && result.notifications.length > 0) { container.innerHTML = result.notifications.map(function(n) { var icon = '🔔'; if (n.type === 'like') icon = '❤️'; else if (n.type === 'comment') icon = '💬'; else if (n.type === 'friend_request') icon = '👫'; return '<div class="notif-item '+(n.is_read?'':'unread')+'" onclick="markRead(\''+n.id+'\')"><div class="notif-icon">'+icon+'</div><div class="notif-content"><div class="notif-text">'+n.text+'</div><div class="notif-time">'+timeAgo(n.created_at)+'</div></div>'+(n.is_read?'':'<div class="notif-dot"></div>')+'</div>'; }).join(''); } else { container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔔</div><h3>All caught up!</h3><p>No notifications yet</p></div>'; } }); }
-function markRead(id) { fetch(API_BASE+'/notifications/read', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id, notificationId: id }) }).then(function() { loadNotifications(); }); }
+function setupUI() { document.getElementById('museMenuBtn').addEventListener('click', function(e) { e.stopPropagation(); document.getElementById('dropdownMenu').classList.toggle('show'); }); document.addEventListener('click', function() { document.getElementById('dropdownMenu').classList.remove('show'); }); document.getElementById('markAllRead').addEventListener('click', function() { fetch(API_BASE + '/notifications/read', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id }) }).then(function() { loadNotifications(); }); }); document.getElementById('footerHandle').addEventListener('click', function() { document.getElementById('footerDashboard').classList.toggle('collapsed'); }); var startY = 0; var footer = document.getElementById('footerDashboard'); footer.addEventListener('touchstart', function(e) { startY = e.touches[0].clientY; }); footer.addEventListener('touchmove', function(e) { var diff = startY - e.touches[0].clientY; if (diff > 30) footer.classList.remove('collapsed'); else if (diff < -30) footer.classList.add('collapsed'); }); }
+function loadNotifications() {
+    fetch(API_BASE + '/notifications/' + currentUser.id).then(function(r) { return r.json(); }).then(function(result) {
+        var container = document.getElementById('notifList');
+        if (result.success && result.notifications && result.notifications.length > 0) {
+            container.innerHTML = result.notifications.map(function(n) {
+                var icon = '🔔'; if (n.type === 'like') icon = '❤️'; else if (n.type === 'comment') icon = '💬'; else if (n.type === 'friend_request') icon = '👫';
+                var clickAction = '';
+                if (n.post_id) { clickAction = "window.location.href='centre.html'"; }
+                else if (n.type === 'friend_request' && n.from_user_id) { clickAction = "window.location.href='profile.html?user=" + n.from_user_id + "'"; }
+                else { clickAction = "markRead('" + n.id + "')"; }
+                return '<div class="notif-item ' + (n.is_read ? '' : 'unread') + '" onclick="' + clickAction + '"><div class="notif-icon">' + icon + '</div><div class="notif-content"><div class="notif-text">' + n.text + '</div><div class="notif-time">' + timeAgo(n.created_at) + '</div></div>' + (n.is_read ? '' : '<div class="notif-dot"></div>') + '</div>';
+            }).join('');
+        } else { container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔔</div><h3>All caught up!</h3><p>No notifications yet</p></div>'; }
+    });
+}
+function markRead(id) { fetch(API_BASE + '/notifications/read', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id, notificationId: id }) }).then(function() { loadNotifications(); }); }
 function timeAgo(d) { if (!d) return ''; var s = Math.floor((new Date() - new Date(d)) / 1000); if (s < 60) return 'just now'; if (s < 3600) return Math.floor(s / 60) + 'm ago'; if (s < 86400) return Math.floor(s / 3600) + 'h ago'; return Math.floor(s / 86400) + 'd ago'; }
 </script>
 </body>
