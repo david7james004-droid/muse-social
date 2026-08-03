@@ -24,11 +24,13 @@
         .btn-enter { display: block; width: 100%; padding: 1rem; border: 2px solid #ADD8E6; border-radius: 50px; background: transparent; color: #ADD8E6; font-size: 1.2rem; font-weight: 600; cursor: pointer; letter-spacing: 3px; text-transform: uppercase; transition: all 0.3s; font-family: inherit; text-decoration: none; margin-bottom: 1rem; }
         .btn-enter:hover { background: #ADD8E6; color: #000; }
         .btn-enter:active { transform: scale(0.97); }
-        .auth-buttons { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+        .auth-buttons { display: flex; gap: 8px; margin-bottom: 0.5rem; }
         .btn-signin { flex: 1; padding: 0.75rem; border: 1px solid #ADD8E6; border-radius: 50px; background: transparent; color: #ADD8E6; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; transition: all 0.3s; font-family: inherit; }
         .btn-signin:hover { background: rgba(173,216,230,0.1); }
         .btn-signup { flex: 1; padding: 0.75rem; border: none; border-radius: 50px; background: #ADD8E6; color: #000; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; transition: all 0.3s; font-family: inherit; }
         .btn-signup:hover { background: #9EC5D6; }
+        .admin-link { display: block; text-align: center; color: #666; font-size: 0.7rem; margin-bottom: 12px; text-decoration: none; }
+        .admin-link:hover { color: #FFA726; }
         .footer-text { font-size: 0.7rem; color: #999; margin-top: 1rem; }
     </style>
 </head>
@@ -49,6 +51,7 @@
         <p class="tagline">Share moments. Scroll endlessly.<br>Connect with friends.</p>
         <a href="centre.html" class="btn-enter">Enter Muse</a>
         <div class="auth-buttons"><a href="login.html" class="btn-signin">Sign In</a><a href="register.html" class="btn-signup">Register</a></div>
+        <a href="admin.html" class="admin-link">🛡️ Admin</a>
         <p class="footer-text">&copy; 2026 Muse Social-Media by Amusement Inc. All rights reserved.</p>
     </div>
     <script>
@@ -68,4 +71,4 @@
         document.addEventListener('keydown', function(e) { if (e.key === 'Enter') window.location.href = 'centre.html'; });
     </script>
 </body>
-</html>
+</html>v

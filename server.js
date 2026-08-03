@@ -219,18 +219,29 @@ app.post('/api/account/delete', async (req, res) => {
     try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId } = req.body; await col('posts').deleteMany({ user_id: userId }); await col('likes').deleteMany({ user_id: userId }); await col('comments').deleteMany({ user_id: userId }); await col('friends').deleteMany({ $or: [{ user_id: userId }, { friend_id: userId }] }); await col('messages').deleteMany({ $or: [{ sender_id: userId }, { receiver_id: userId }] }); await col('notifications').deleteMany({ user_id: userId }); await col('bookmarks').deleteMany({ user_id: userId }); await col('users').deleteOne({ id: userId }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// ==================== ROUTING ====================
-// Serve admin page explicitly
+// ==================== ROUTING (ALL HTML PAGES) ====================
 app.get('/admin.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'admin.html')); });
+app.get('/index.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
+app.get('/login.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'login.html')); });
+app.get('/register.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'register.html')); });
+app.get('/centre.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'centre.html')); });
+app.get('/profile.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'profile.html')); });
+app.get('/friends.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'friends.html')); });
+app.get('/messages.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'messages.html')); });
+app.get('/notifications.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'notifications.html')); });
+app.get('/slideshow.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'slideshow.html')); });
+app.get('/hot.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'hot.html')); });
+app.get('/wallet.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'wallet.html')); });
+app.get('/groups.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'groups.html')); });
+app.get('/events.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'events.html')); });
+app.get('/polls.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'polls.html')); });
+app.get('/stories.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'stories.html')); });
+app.get('/search.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'search.html')); });
+app.get('/media-uploads.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'media-uploads.html')); });
+app.get('/settings.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'settings.html')); });
 
-// Catch-all: check if file exists first, otherwise serve index.html
-app.get('*', (req, res) => {
-    const filePath = path.join(__dirname, 'public', req.path);
-    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-        return res.sendFile(filePath);
-    }
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// Catch-all
+app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 
 // ==================== START SERVER ====================
 async function startServer() { await connectDB(); app.listen(PORT, () => { console.log(''); console.log('🎭  MUSE SOCIAL MEDIA SERVER'); console.log('    Port: ' + PORT + ' | MongoDB Atlas'); console.log(''); }); }
