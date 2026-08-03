@@ -219,7 +219,19 @@ app.post('/api/account/delete', async (req, res) => {
     try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId } = req.body; await col('posts').deleteMany({ user_id: userId }); await col('likes').deleteMany({ user_id: userId }); await col('comments').deleteMany({ user_id: userId }); await col('friends').deleteMany({ $or: [{ user_id: userId }, { friend_id: userId }] }); await col('messages').deleteMany({ $or: [{ sender_id: userId }, { receiver_id: userId }] }); await col('notifications').deleteMany({ user_id: userId }); await col('bookmarks').deleteMany({ user_id: userId }); await col('users').deleteOne({ id: userId }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
+// ==================== ROUTING ====================
+// Serve admin page explicitly
+app.get('/admin.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'admin.html')); });
 
-async function startServer() { await connectDB(); app.listen(PORT, () => { console.log('🎭 MUSE SOCIAL MEDIA SERVER - Port: ' + PORT + ' - MongoDB Atlas'); }); }
+// Catch-all: check if file exists first, otherwise serve index.html
+app.get('*', (req, res) => {
+    const filePath = path.join(__dirname, 'public', req.path);
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+        return res.sendFile(filePath);
+    }
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ==================== START SERVER ====================
+async function startServer() { await connectDB(); app.listen(PORT, () => { console.log(''); console.log('🎭  MUSE SOCIAL MEDIA SERVER'); console.log('    Port: ' + PORT + ' | MongoDB Atlas'); console.log(''); }); }
 startServer();
