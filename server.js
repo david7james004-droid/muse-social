@@ -11,161 +11,62 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// MongoDB connection
 const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://museadmin:9753124680musesocial1@muse-social-db.lnhptcr.mongodb.net/?appName=muse-social-db';
 const DB_NAME = 'muse-social';
 let db;
 
 async function connectDB() {
-    try {
-        const client = new MongoClient(MONGO_URI);
-        await client.connect();
-        db = client.db(DB_NAME);
-        console.log('✅ MongoDB connected successfully!');
-        return db;
-    } catch (err) {
-        console.error('❌ MongoDB connection error:', err.message);
-        console.log('⚠️  Falling back to JSON file database...');
-        return null;
-    }
+    try { const client = new MongoClient(MONGO_URI); await client.connect(); db = client.db(DB_NAME); console.log('✅ MongoDB connected!'); return db; }
+    catch (err) { console.error('❌ MongoDB error:', err.message); return null; }
 }
 
-// Ensure upload directories exist
-const uploadDirs = ['public/uploads', 'public/uploads/images', 'public/uploads/videos', 'public/uploads/avatars', 'public/uploads/stories', 'public/uploads/messages'];
+const uploadDirs = ['public/uploads','public/uploads/images','public/uploads/videos','public/uploads/avatars','public/uploads/stories','public/uploads/messages'];
 uploadDirs.forEach(dir => { if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true }); });
 
-app.use(cors());
-app.use(express.json());
-app.use(express.static('public'));
+app.use(cors()); app.use(express.json()); app.use(express.static('public'));
 
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        let subdir = 'images';
-        if (file.fieldname === 'video') subdir = 'videos';
-        if (file.fieldname === 'avatar') subdir = 'avatars';
-        if (file.fieldname === 'story') subdir = 'stories';
-        cb(null, path.join(__dirname, 'public/uploads', subdir));
-    },
+    destination: (req, file, cb) => { let subdir = 'images'; if (file.fieldname === 'video') subdir = 'videos'; if (file.fieldname === 'avatar') subdir = 'avatars'; if (file.fieldname === 'story') subdir = 'stories'; cb(null, path.join(__dirname, 'public/uploads', subdir)); },
     filename: (req, file, cb) => { cb(null, uuidv4() + path.extname(file.originalname)); }
 });
 const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } });
-
 function col(name) { return db ? db.collection(name) : null; }
 
 // ==================== AUTO REGISTER ====================
 app.post('/api/auto-register', async (req, res) => {
-    try {
-        const userData = req.body;
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        let user = await col('users').findOne({ id: userData.id });
-        if (user) {
-            await col('users').updateOne({ id: userData.id }, { $set: { last_seen: new Date().toISOString(), is_online: 1 } });
-            return res.json({ success: true, user: { id: user.id, tag_name: user.tag_name, country_flag: user.country_flag || '', avatar: user.avatar || '', bio: user.bio || '', muse_coins: user.muse_coins || 0 } });
-        }
-        const newUser = { id: userData.id, tag_name: userData.tag_name, password_hash: '', email: '', age: null, country: '', country_flag: userData.country_flag || '', bio: userData.bio || '', avatar: userData.avatar || '', join_date: new Date().toISOString(), last_seen: new Date().toISOString(), muse_coins: 100, is_online: 1, is_live: 0 };
-        await col('users').insertOne(newUser);
-        res.json({ success: true, user: { id: newUser.id, tag_name: newUser.tag_name, country_flag: newUser.country_flag, avatar: newUser.avatar, bio: newUser.bio, muse_coins: newUser.muse_coins } });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const userData = req.body; let user = await col('users').findOne({ id: userData.id }); if (user) { await col('users').updateOne({ id: userData.id }, { $set: { last_seen: new Date().toISOString(), is_online: 1 } }); return res.json({ success: true, user: { id: user.id, tag_name: user.tag_name, country_flag: user.country_flag || '', avatar: user.avatar || '', bio: user.bio || '', muse_coins: user.muse_coins || 0 } }); } const newUser = { id: userData.id, tag_name: userData.tag_name, password_hash: '', email: '', age: null, country: '', country_flag: userData.country_flag || '', bio: userData.bio || '', avatar: userData.avatar || '', join_date: new Date().toISOString(), last_seen: new Date().toISOString(), muse_coins: 100, is_online: 1, is_live: 0 }; await col('users').insertOne(newUser); res.json({ success: true, user: { id: newUser.id, tag_name: newUser.tag_name, country_flag: newUser.country_flag, avatar: newUser.avatar, bio: newUser.bio, muse_coins: newUser.muse_coins } }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 // ==================== REGISTER ====================
 app.post('/api/register', async (req, res) => {
-    try {
-        const { tagName, password, email, age, country, countryFlag } = req.body;
-        if (!tagName || tagName.length < 2) return res.json({ success: false, error: 'Tag name must be at least 2 characters' });
-        if (!password || password.length < 4) return res.json({ success: false, error: 'Password must be at least 4 characters' });
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const exists = await col('users').findOne({ tag_name: tagName });
-        if (exists) return res.json({ success: false, error: 'Tag name already taken' });
-        const newUser = { id: uuidv4(), tag_name: tagName, password_hash: bcrypt.hashSync(password, 10), email: email || '', age: age || null, country: country || '', country_flag: countryFlag || '', bio: '', avatar: '', join_date: new Date().toISOString(), last_seen: new Date().toISOString(), muse_coins: 100, is_online: 1, is_live: 0 };
-        await col('users').insertOne(newUser);
-        res.json({ success: true, user: { id: newUser.id, tag_name: newUser.tag_name, country_flag: newUser.country_flag, avatar: newUser.avatar, muse_coins: newUser.muse_coins } });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { tagName, password, email, age, country, countryFlag } = req.body; if (!tagName || tagName.length < 2) return res.json({ success: false, error: 'Tag name too short' }); if (!password || password.length < 4) return res.json({ success: false, error: 'Password too short' }); const exists = await col('users').findOne({ tag_name: tagName }); if (exists) return res.json({ success: false, error: 'Tag name taken' }); const newUser = { id: uuidv4(), tag_name: tagName, password_hash: bcrypt.hashSync(password, 10), email: email || '', age: age || null, country: country || '', country_flag: countryFlag || '', bio: '', avatar: '', join_date: new Date().toISOString(), last_seen: new Date().toISOString(), muse_coins: 100, is_online: 1, is_live: 0 }; await col('users').insertOne(newUser); res.json({ success: true, user: { id: newUser.id, tag_name: newUser.tag_name, country_flag: newUser.country_flag, avatar: newUser.avatar, muse_coins: newUser.muse_coins } }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 // ==================== LOGIN ====================
 app.post('/api/login', async (req, res) => {
-    try {
-        const { tagName, password } = req.body;
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const user = await col('users').findOne({ tag_name: tagName });
-        if (!user) return res.json({ success: false, error: 'User not found' });
-        if (!bcrypt.compareSync(password, user.password_hash)) return res.json({ success: false, error: 'Invalid password' });
-        await col('users').updateOne({ id: user.id }, { $set: { is_online: 1, last_seen: new Date().toISOString() } });
-        res.json({ success: true, user: { id: user.id, tag_name: user.tag_name, country_flag: user.country_flag || '', avatar: user.avatar || '', bio: user.bio || '', muse_coins: user.muse_coins || 0 } });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { tagName, password } = req.body; const user = await col('users').findOne({ tag_name: tagName }); if (!user) return res.json({ success: false, error: 'User not found' }); if (!bcrypt.compareSync(password, user.password_hash)) return res.json({ success: false, error: 'Invalid password' }); await col('users').updateOne({ id: user.id }, { $set: { is_online: 1, last_seen: new Date().toISOString() } }); res.json({ success: true, user: { id: user.id, tag_name: user.tag_name, country_flag: user.country_flag || '', avatar: user.avatar || '', bio: user.bio || '', muse_coins: user.muse_coins || 0 } }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 // ==================== POSTS ====================
 app.get('/api/posts', async (req, res) => {
-    try {
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const { type, userId } = req.query;
-        let query = {};
-        if (type === 'slideshow') { query.slideshow = true; }
-        else if (type === 'friends' && userId) {
-            const friends = await col('friends').find({ $or: [{ user_id: userId }, { friend_id: userId }], status: 'accepted' }).toArray();
-            const friendIds = friends.map(f => f.user_id === userId ? f.friend_id : f.user_id);
-            friendIds.push(userId);
-            query.$or = [{ user_id: { $in: friendIds } }, { visibility: 'public' }];
-        }
-        let posts = await col('posts').find(query).sort({ created_at: -1 }).limit(50).toArray();
-        for (let p of posts) { const u = await col('users').findOne({ id: p.user_id }); p.tag_name = u ? u.tag_name : 'unknown'; p.avatar = u ? u.avatar || '' : ''; p.country_flag = u ? u.country_flag || '' : ''; }
-        res.json({ success: true, posts });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { type, userId } = req.query; let query = {}; if (type === 'slideshow') { query.slideshow = true; } else if (type === 'friends' && userId) { const friends = await col('friends').find({ $or: [{ user_id: userId }, { friend_id: userId }], status: 'accepted' }).toArray(); const friendIds = friends.map(f => f.user_id === userId ? f.friend_id : f.user_id); friendIds.push(userId); query.user_id = { $in: friendIds }; } let posts = await col('posts').find(query).sort({ created_at: -1 }).limit(50).toArray(); for (let p of posts) { const u = await col('users').findOne({ id: p.user_id }); p.tag_name = u ? u.tag_name : 'unknown'; p.avatar = u ? u.avatar || '' : ''; p.country_flag = u ? u.country_flag || '' : ''; } res.json({ success: true, posts }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 app.post('/api/posts', upload.fields([{ name: 'image', maxCount: 4 }, { name: 'video', maxCount: 1 }]), async (req, res) => {
-    try {
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const { userId, text, visibility, slideshow } = req.body;
-        if (!userId) return res.json({ success: false, error: 'User ID required' });
-        let media = '', mediaType = '';
-        if (req.files) {
-            if (req.files.image && req.files.image.length > 0) { media = req.files.image.map(f => '/uploads/images/' + f.filename).join(','); mediaType = 'image'; }
-            if (req.files.video && req.files.video.length > 0) { media = '/uploads/videos/' + req.files.video[0].filename; mediaType = 'video'; }
-        }
-        const post = { id: uuidv4(), user_id: userId, text: text || '', media, media_type: mediaType, visibility: visibility || 'friends', slideshow: slideshow === 'true' || slideshow === true, created_at: new Date().toISOString(), likes_count: 0, comments_count: 0, shares_count: 0 };
-        await col('posts').insertOne(post);
-        await col('users').updateOne({ id: userId }, { $inc: { muse_coins: 5 } });
-        const u = await col('users').findOne({ id: userId });
-        res.json({ success: true, post: { ...post, tag_name: u ? u.tag_name : 'unknown', avatar: u ? u.avatar || '' : '', country_flag: u ? u.country_flag || '' : '' } });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, text, visibility, slideshow } = req.body; if (!userId) return res.json({ success: false, error: 'User ID required' }); let media = '', mediaType = ''; if (req.files) { if (req.files.image && req.files.image.length > 0) { media = req.files.image.map(f => '/uploads/images/' + f.filename).join(','); mediaType = 'image'; } if (req.files.video && req.files.video.length > 0) { media = '/uploads/videos/' + req.files.video[0].filename; mediaType = 'video'; } } const post = { id: uuidv4(), user_id: userId, text: text || '', media, media_type: mediaType, visibility: visibility || 'friends', slideshow: slideshow === 'true' || slideshow === true, created_at: new Date().toISOString(), likes_count: 0, comments_count: 0, shares_count: 0 }; await col('posts').insertOne(post); await col('users').updateOne({ id: userId }, { $inc: { muse_coins: 5 } }); const u = await col('users').findOne({ id: userId }); res.json({ success: true, post: { ...post, tag_name: u ? u.tag_name : 'unknown', avatar: u ? u.avatar || '' : '', country_flag: u ? u.country_flag || '' : '' } }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 app.post('/api/posts/delete', async (req, res) => {
     try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, postId } = req.body; const result = await col('posts').deleteOne({ id: postId, user_id: userId }); if (result.deletedCount === 0) return res.json({ success: false, error: 'Post not found or not yours' }); await col('likes').deleteMany({ post_id: postId }); await col('comments').deleteMany({ post_id: postId }); await col('bookmarks').deleteMany({ post_id: postId }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// ==================== LIKES ====================
+// ==================== LIKES & COMMENTS ====================
 app.post('/api/like', async (req, res) => {
-    try {
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const { userId, postId } = req.body;
-        const existing = await col('likes').findOne({ user_id: userId, post_id: postId });
-        if (existing) { await col('likes').deleteOne({ user_id: userId, post_id: postId }); await col('posts').updateOne({ id: postId }, { $inc: { likes_count: -1 } }); return res.json({ success: true, liked: false }); }
-        await col('likes').insertOne({ user_id: userId, post_id: postId, created_at: new Date().toISOString() });
-        await col('posts').updateOne({ id: postId }, { $inc: { likes_count: 1 } });
-        const post = await col('posts').findOne({ id: postId });
-        if (post && post.user_id !== userId) { const liker = await col('users').findOne({ id: userId }); await col('notifications').insertOne({ id: uuidv4(), user_id: post.user_id, from_user_id: userId, type: 'like', post_id: postId, text: (liker ? liker.tag_name : 'Someone') + ' liked your post', is_read: false, created_at: new Date().toISOString() }); }
-        res.json({ success: true, liked: true });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, postId } = req.body; const existing = await col('likes').findOne({ user_id: userId, post_id: postId }); if (existing) { await col('likes').deleteOne({ user_id: userId, post_id: postId }); await col('posts').updateOne({ id: postId }, { $inc: { likes_count: -1 } }); return res.json({ success: true, liked: false }); } await col('likes').insertOne({ user_id: userId, post_id: postId, created_at: new Date().toISOString() }); await col('posts').updateOne({ id: postId }, { $inc: { likes_count: 1 } }); const post = await col('posts').findOne({ id: postId }); if (post && post.user_id !== userId) { const liker = await col('users').findOne({ id: userId }); await col('notifications').insertOne({ id: uuidv4(), user_id: post.user_id, from_user_id: userId, type: 'like', post_id: postId, text: (liker ? liker.tag_name : 'Someone') + ' liked your post', is_read: false, created_at: new Date().toISOString() }); } res.json({ success: true, liked: true }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// ==================== COMMENTS ====================
 app.post('/api/comments', async (req, res) => {
-    try {
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const { userId, postId, text } = req.body;
-        if (!text || text.length > 300) return res.json({ success: false, error: 'Invalid comment' });
-        const comment = { id: uuidv4(), user_id: userId, post_id: postId, text, created_at: new Date().toISOString() };
-        await col('comments').insertOne(comment);
-        await col('posts').updateOne({ id: postId }, { $inc: { comments_count: 1 } });
-        const post = await col('posts').findOne({ id: postId });
-        if (post && post.user_id !== userId) { const commenter = await col('users').findOne({ id: userId }); await col('notifications').insertOne({ id: uuidv4(), user_id: post.user_id, from_user_id: userId, type: 'comment', post_id: postId, text: (commenter ? commenter.tag_name : 'Someone') + ' commented on your post', is_read: false, created_at: new Date().toISOString() }); }
-        const u = await col('users').findOne({ id: userId });
-        res.json({ success: true, comment: { ...comment, tag_name: u ? u.tag_name : '?', avatar: u ? u.avatar || '' : '' } });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, postId, text } = req.body; if (!text || text.length > 300) return res.json({ success: false, error: 'Invalid comment' }); const comment = { id: uuidv4(), user_id: userId, post_id: postId, text, created_at: new Date().toISOString() }; await col('comments').insertOne(comment); await col('posts').updateOne({ id: postId }, { $inc: { comments_count: 1 } }); const post = await col('posts').findOne({ id: postId }); if (post && post.user_id !== userId) { const commenter = await col('users').findOne({ id: userId }); await col('notifications').insertOne({ id: uuidv4(), user_id: post.user_id, from_user_id: userId, type: 'comment', post_id: postId, text: (commenter ? commenter.tag_name : 'Someone') + ' commented on your post', is_read: false, created_at: new Date().toISOString() }); } const u = await col('users').findOne({ id: userId }); res.json({ success: true, comment: { ...comment, tag_name: u ? u.tag_name : '?', avatar: u ? u.avatar || '' : '' } }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 app.get('/api/comments/:postId', async (req, res) => {
@@ -178,7 +79,7 @@ app.get('/api/friends/:userId', async (req, res) => {
 });
 
 app.post('/api/friends/request', async (req, res) => {
-    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, friendTagName } = req.body; const friend = await col('users').findOne({ tag_name: friendTagName }); if (!friend) return res.json({ success: false, error: 'User not found' }); if (friend.id === userId) return res.json({ success: false, error: 'Cannot add yourself' }); const exists = await col('friends').findOne({ $or: [{ user_id: userId, friend_id: friend.id }, { user_id: friend.id, friend_id: userId }] }); if (exists) return res.json({ success: false, error: 'Already friends or pending' }); await col('friends').insertOne({ id: uuidv4(), user_id: userId, friend_id: friend.id, status: 'pending', created_at: new Date().toISOString() }); const requester = await col('users').findOne({ id: userId }); await col('notifications').insertOne({ id: uuidv4(), user_id: friend.id, from_user_id: userId, type: 'friend_request', text: (requester ? requester.tag_name : 'Someone') + ' sent you a friend request', is_read: false, created_at: new Date().toISOString() }); res.json({ success: true, message: 'Friend request sent' }); } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, friendTagName } = req.body; const friend = await col('users').findOne({ tag_name: friendTagName }); if (!friend) return res.json({ success: false, error: 'User not found' }); if (friend.id === userId) return res.json({ success: false, error: 'Cannot add yourself' }); const exists = await col('friends').findOne({ $or: [{ user_id: userId, friend_id: friend.id }, { user_id: friend.id, friend_id: userId }] }); if (exists) return res.json({ success: false, error: 'Already friends' }); await col('friends').insertOne({ id: uuidv4(), user_id: userId, friend_id: friend.id, status: 'pending', created_at: new Date().toISOString() }); const requester = await col('users').findOne({ id: userId }); await col('notifications').insertOne({ id: uuidv4(), user_id: friend.id, from_user_id: userId, type: 'friend_request', text: (requester ? requester.tag_name : 'Someone') + ' sent you a friend request', is_read: false, created_at: new Date().toISOString() }); res.json({ success: true, message: 'Friend request sent' }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 app.post('/api/friends/respond', async (req, res) => {
@@ -191,22 +92,11 @@ app.get('/api/messages/:userId/:friendId', async (req, res) => {
 });
 
 app.post('/api/messages', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'video', maxCount: 1 }]), async (req, res) => {
-    try {
-        if (!db) return res.json({ success: false, error: 'Database not connected' });
-        const { senderId, receiverId, text } = req.body;
-        let media = '', mediaType = '';
-        if (req.files) {
-            if (req.files.image && req.files.image.length > 0) { media = '/uploads/images/' + req.files.image[0].filename; mediaType = 'image'; }
-            if (req.files.video && req.files.video.length > 0) { media = '/uploads/videos/' + req.files.video[0].filename; mediaType = 'video'; }
-        }
-        const msg = { id: uuidv4(), sender_id: senderId, receiver_id: receiverId, text: text || '', media, media_type: mediaType, is_read: false, created_at: new Date().toISOString() };
-        await col('messages').insertOne(msg);
-        res.json({ success: true, message: msg });
-    } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { senderId, receiverId, text } = req.body; let media = '', mediaType = ''; if (req.files) { if (req.files.image && req.files.image.length > 0) { media = '/uploads/images/' + req.files.image[0].filename; mediaType = 'image'; } if (req.files.video && req.files.video.length > 0) { media = '/uploads/videos/' + req.files.video[0].filename; mediaType = 'video'; } } const msg = { id: uuidv4(), sender_id: senderId, receiver_id: receiverId, text: text || '', media, media_type: mediaType, is_read: false, created_at: new Date().toISOString() }; await col('messages').insertOne(msg); res.json({ success: true, message: msg }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 app.get('/api/conversations/:userId', async (req, res) => {
-    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const userId = req.params.userId; const msgs = await col('messages').find({ $or: [{ sender_id: userId }, { receiver_id: userId }] }).toArray(); const involved = {}; msgs.forEach(m => { if (m.sender_id === userId) involved[m.receiver_id] = true; if (m.receiver_id === userId) involved[m.sender_id] = true; }); const conversations = []; for (let otherId of Object.keys(involved)) { const u = await col('users').findOne({ id: otherId }); const lastMsg = await col('messages').findOne({ $or: [{ sender_id: userId, receiver_id: otherId }, { sender_id: otherId, receiver_id: userId }] }, { sort: { created_at: -1 } }); const unread = await col('messages').countDocuments({ receiver_id: userId, sender_id: otherId, is_read: false }); conversations.push({ other_user_id: otherId, tag_name: u ? u.tag_name : '?', avatar: u ? u.avatar || '' : '', is_online: u ? u.is_online : 0, last_message: lastMsg ? (lastMsg.media ? '📎 Media' : lastMsg.text) : 'Start chatting', unread }); } conversations.sort((a, b) => { const aM = msgs.filter(m => (m.sender_id===userId&&m.receiver_id===a.other_user_id)||(m.sender_id===a.other_user_id&&m.receiver_id===userId)).sort((x,y)=>new Date(y.created_at)-new Date(x.created_at))[0]; const bM = msgs.filter(m => (m.sender_id===userId&&m.receiver_id===b.other_user_id)||(m.sender_id===b.other_user_id&&m.receiver_id===userId)).sort((x,y)=>new Date(y.created_at)-new Date(x.created_at))[0]; if(!aM)return 1;if(!bM)return -1;return new Date(bM.created_at)-new Date(aM.created_at); }); res.json({ success: true, conversations }); } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const userId = req.params.userId; const msgs = await col('messages').find({ $or: [{ sender_id: userId }, { receiver_id: userId }] }).toArray(); const involved = {}; msgs.forEach(m => { if (m.sender_id === userId) involved[m.receiver_id] = true; if (m.receiver_id === userId) involved[m.sender_id] = true; }); const conversations = []; for (let otherId of Object.keys(involved)) { const u = await col('users').findOne({ id: otherId }); const lastMsg = await col('messages').findOne({ $or: [{ sender_id: userId, receiver_id: otherId }, { sender_id: otherId, receiver_id: userId }] }, { sort: { created_at: -1 } }); const unread = await col('messages').countDocuments({ receiver_id: userId, sender_id: otherId, is_read: false }); conversations.push({ other_user_id: otherId, tag_name: u ? u.tag_name : '?', avatar: u ? u.avatar || '' : '', is_online: u ? u.is_online : 0, last_message: lastMsg ? (lastMsg.media ? '📎 Media' : lastMsg.text) : 'Start chatting', unread }); } res.json({ success: true, conversations }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 app.post('/api/messages/delete', async (req, res) => {
@@ -228,24 +118,22 @@ app.post('/api/profile/update', upload.single('avatar'), async (req, res) => {
 
 // ==================== NOTIFICATIONS ====================
 app.get('/api/notifications/:userId', async (req, res) => {
-    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const notifications = await col('notifications').find({ user_id: req.params.userId }).sort({ created_at: -1 }).limit(50).toArray(); for (let n of notifications) { const u = await col('users').findOne({ id: n.from_user_id }); n.from_tag_name = u ? u.tag_name : ''; n.from_avatar = u ? u.avatar || '' : ''; } const unread = await col('notifications').countDocuments({ user_id: req.params.userId, is_read: false }); res.json({ success: true, notifications, unread }); } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const notifications = await col('notifications').find({ user_id: req.params.userId }).sort({ created_at: -1 }).limit(50).toArray(); for (let n of notifications) { const u = await col('users').findOne({ id: n.from_user_id }); n.from_tag_name = u ? u.tag_name : ''; } const unread = await col('notifications').countDocuments({ user_id: req.params.userId, is_read: false }); res.json({ success: true, notifications, unread }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 app.post('/api/notifications/read', async (req, res) => {
     try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, notificationId } = req.body; if (notificationId) await col('notifications').updateOne({ id: notificationId, user_id: userId }, { $set: { is_read: true } }); else await col('notifications').updateMany({ user_id: userId }, { $set: { is_read: true } }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// ==================== SEARCH ====================
+// ==================== SEARCH, BOOKMARKS, WALLET, STORIES ====================
 app.get('/api/search', async (req, res) => {
     try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const q = (req.query.q || '').toLowerCase(); if (!q) return res.json({ success: true, users: [], posts: [] }); const users = await col('users').find({ tag_name: { $regex: q, $options: 'i' } }).limit(20).toArray(); res.json({ success: true, users: users.map(u => ({ id: u.id, tag_name: u.tag_name, avatar: u.avatar || '', country_flag: u.country_flag || '' })), posts: [] }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// ==================== BOOKMARKS ====================
 app.post('/api/bookmarks', async (req, res) => {
     try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, postId } = req.body; const existing = await col('bookmarks').findOne({ user_id: userId, post_id: postId }); if (existing) { await col('bookmarks').deleteOne({ user_id: userId, post_id: postId }); return res.json({ success: true, bookmarked: false }); } await col('bookmarks').insertOne({ user_id: userId, post_id: postId, created_at: new Date().toISOString() }); res.json({ success: true, bookmarked: true }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// ==================== WALLET ====================
 app.get('/api/wallet/:userId', async (req, res) => {
     try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const user = await col('users').findOne({ id: req.params.userId }); const transactions = await col('wallet_transactions').find({ user_id: req.params.userId }).sort({ created_at: -1 }).limit(50).toArray(); res.json({ success: true, balance: user ? (user.muse_coins || 0) : 0, transactions }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
@@ -254,7 +142,6 @@ app.post('/api/wallet/send', async (req, res) => {
     try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { fromUserId, toTagName, amount } = req.body; const amt = parseInt(amount); const sender = await col('users').findOne({ id: fromUserId }); if (!sender || (sender.muse_coins || 0) < amt) return res.json({ success: false, error: 'Insufficient coins' }); const receiver = await col('users').findOne({ tag_name: toTagName }); if (!receiver) return res.json({ success: false, error: 'User not found' }); await col('users').updateOne({ id: fromUserId }, { $inc: { muse_coins: -amt } }); await col('users').updateOne({ id: receiver.id }, { $inc: { muse_coins: amt } }); await col('wallet_transactions').insertOne({ id: uuidv4(), user_id: fromUserId, amount: -amt, type: 'send', description: 'Sent to ' + receiver.tag_name, created_at: new Date().toISOString() }); await col('wallet_transactions').insertOne({ id: uuidv4(), user_id: receiver.id, amount: amt, type: 'receive', description: 'Received from ' + sender.tag_name, created_at: new Date().toISOString() }); res.json({ success: true, newBalance: (sender.muse_coins || 0) - amt }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// ==================== STORIES ====================
 app.post('/api/stories', upload.single('story'), async (req, res) => {
     try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId } = req.body; const story = { id: uuidv4(), user_id: userId, media: '/uploads/stories/' + req.file.filename, media_type: 'image', text: '', created_at: new Date().toISOString(), expires_at: new Date(Date.now() + 86400000).toISOString() }; await col('stories').insertOne(story); res.json({ success: true, story }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
@@ -269,7 +156,7 @@ app.get('/api/groups', async (req, res) => {
 });
 
 app.post('/api/groups', async (req, res) => {
-    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, name, description, privacy } = req.body; const group = { id: uuidv4(), creator_id: userId, name, description: description || '', privacy: privacy || 'public', members: [userId], created_at: new Date().toISOString() }; await col('groups').insertOne(group); res.json({ success: true, group }); } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, name, description } = req.body; const group = { id: uuidv4(), creator_id: userId, name, description: description || '', members: [userId], created_at: new Date().toISOString() }; await col('groups').insertOne(group); res.json({ success: true, group }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 app.get('/api/groups/:groupId/messages', async (req, res) => {
@@ -290,11 +177,15 @@ app.get('/api/events', async (req, res) => {
 });
 
 app.post('/api/events', async (req, res) => {
-    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, title, description, eventDate, location } = req.body; const event = { id: uuidv4(), user_id: userId, title, description: description || '', event_date: eventDate, location: location || '', attendees: [userId], created_at: new Date().toISOString() }; await col('events').insertOne(event); res.json({ success: true, event }); } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, title, description, eventDate, location } = req.body; if (!title) return res.json({ success: false, error: 'Title required' }); const event = { id: uuidv4(), user_id: userId, title, description: description || '', event_date: eventDate || new Date().toISOString(), location: location || '', attendees: [userId], created_at: new Date().toISOString() }; await col('events').insertOne(event); res.json({ success: true, event }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 app.post('/api/events/:eventId/rsvp', async (req, res) => {
     try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId } = req.body; const event = await col('events').findOne({ id: req.params.eventId }); if (!event) return res.json({ success: false, error: 'Event not found' }); const attendees = event.attendees || []; const idx = attendees.indexOf(userId); if (idx > -1) { attendees.splice(idx, 1); await col('events').updateOne({ id: req.params.eventId }, { $set: { attendees } }); res.json({ success: true, going: false }); } else { attendees.push(userId); await col('events').updateOne({ id: req.params.eventId }, { $set: { attendees } }); res.json({ success: true, going: true }); } } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+app.delete('/api/events/:eventId', async (req, res) => {
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId } = req.body; const event = await col('events').findOne({ id: req.params.eventId }); if (!event) return res.json({ success: false, error: 'Event not found' }); if (event.user_id !== userId) return res.json({ success: false, error: 'Not your event' }); await col('events').deleteOne({ id: req.params.eventId }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 // ==================== POLLS ====================
@@ -313,47 +204,22 @@ app.post('/api/polls/vote', async (req, res) => {
 // ==================== ADMIN ====================
 const ADMIN_KEY = process.env.ADMIN_KEY || 'museadmin2026';
 function checkAdmin(req, res, next) { const key = req.headers['x-admin-key']; if (key !== ADMIN_KEY) return res.json({ success: false, error: 'Unauthorized' }); next(); }
-
-app.get('/api/admin/users', checkAdmin, async (req, res) => { try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const users = await col('users').find({}).toArray(); res.json({ success: true, users }); } catch (err) { res.json({ success: false, error: err.message }); } });
-app.get('/api/admin/posts', checkAdmin, async (req, res) => { try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const posts = await col('posts').find({}).sort({ created_at: -1 }).limit(100).toArray(); res.json({ success: true, posts }); } catch (err) { res.json({ success: false, error: err.message }); } });
-app.get('/api/admin/disputes', checkAdmin, async (req, res) => { try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const disputes = await col('disputes').find({}).sort({ created_at: -1 }).toArray(); res.json({ success: true, disputes }); } catch (err) { res.json({ success: false, error: err.message }); } });
-app.post('/api/admin/user/:userId', checkAdmin, async (req, res) => { try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { action, password } = req.body; const userId = req.params.userId; if (action === 'block') await col('users').updateOne({ id: userId }, { $set: { blocked: true } }); else if (action === 'unblock') await col('users').updateOne({ id: userId }, { $set: { blocked: false } }); else if (action === 'reset_password') await col('users').updateOne({ id: userId }, { $set: { password_hash: bcrypt.hashSync(password, 10) } }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); } });
-app.delete('/api/admin/user/:userId', checkAdmin, async (req, res) => { try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const userId = req.params.userId; await col('posts').deleteMany({ user_id: userId }); await col('likes').deleteMany({ user_id: userId }); await col('comments').deleteMany({ user_id: userId }); await col('friends').deleteMany({ $or: [{ user_id: userId }, { friend_id: userId }] }); await col('messages').deleteMany({ $or: [{ sender_id: userId }, { receiver_id: userId }] }); await col('notifications').deleteMany({ user_id: userId }); await col('users').deleteOne({ id: userId }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); } });
-app.post('/api/admin/disputes/:disputeId', checkAdmin, async (req, res) => { try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { action } = req.body; if (action === 'block') { const dispute = await col('disputes').findOne({ id: req.params.disputeId }); if (dispute) await col('users').updateOne({ id: dispute.reported_user_id }, { $set: { blocked: true } }); } await col('disputes').updateOne({ id: req.params.disputeId }, { $set: { status: 'resolved', resolution: action, resolved_at: new Date().toISOString() } }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); } });
+app.get('/api/admin/users', checkAdmin, async (req, res) => { try { if (!db) return res.json({ success: false, error: 'Database not connected' }); res.json({ success: true, users: await col('users').find({}).toArray() }); } catch (err) { res.json({ success: false, error: err.message }); } });
+app.get('/api/admin/posts', checkAdmin, async (req, res) => { try { if (!db) return res.json({ success: false, error: 'Database not connected' }); res.json({ success: true, posts: await col('posts').find({}).sort({ created_at: -1 }).limit(100).toArray() }); } catch (err) { res.json({ success: false, error: err.message }); } });
+app.post('/api/admin/user/:userId', checkAdmin, async (req, res) => { try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { action, password } = req.body; if (action === 'block') await col('users').updateOne({ id: req.params.userId }, { $set: { blocked: true } }); else if (action === 'unblock') await col('users').updateOne({ id: req.params.userId }, { $set: { blocked: false } }); else if (action === 'reset_password') await col('users').updateOne({ id: req.params.userId }, { $set: { password_hash: bcrypt.hashSync(password, 10) } }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); } });
+app.delete('/api/admin/user/:userId', checkAdmin, async (req, res) => { try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const uid = req.params.userId; await col('posts').deleteMany({ user_id: uid }); await col('likes').deleteMany({ user_id: uid }); await col('comments').deleteMany({ user_id: uid }); await col('friends').deleteMany({ $or: [{ user_id: uid }, { friend_id: uid }] }); await col('messages').deleteMany({ $or: [{ sender_id: uid }, { receiver_id: uid }] }); await col('notifications').deleteMany({ user_id: uid }); await col('users').deleteOne({ id: uid }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); } });
 app.delete('/api/admin/posts/:postId', checkAdmin, async (req, res) => { try { if (!db) return res.json({ success: false, error: 'Database not connected' }); await col('posts').deleteOne({ id: req.params.postId }); await col('likes').deleteMany({ post_id: req.params.postId }); await col('comments').deleteMany({ post_id: req.params.postId }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); } });
 
 // ==================== SETTINGS / ACCOUNT ====================
 app.post('/api/settings/password', async (req, res) => {
-    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, currentPassword, newPassword } = req.body; const user = await col('users').findOne({ id: userId }); if (!user) return res.json({ success: false, error: 'User not found' }); if (!user.password_hash) return res.json({ success: false, error: 'No password set for auto-generated accounts' }); if (!bcrypt.compareSync(currentPassword, user.password_hash)) return res.json({ success: false, error: 'Current password is incorrect' }); if (!newPassword || newPassword.length < 4) return res.json({ success: false, error: 'New password must be at least 4 characters' }); await col('users').updateOne({ id: userId }, { $set: { password_hash: bcrypt.hashSync(newPassword, 10) } }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
+    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId, currentPassword, newPassword } = req.body; const user = await col('users').findOne({ id: userId }); if (!user) return res.json({ success: false, error: 'User not found' }); if (!user.password_hash) return res.json({ success: false, error: 'No password set' }); if (!bcrypt.compareSync(currentPassword, user.password_hash)) return res.json({ success: false, error: 'Wrong password' }); if (!newPassword || newPassword.length < 4) return res.json({ success: false, error: 'Password too short' }); await col('users').updateOne({ id: userId }, { $set: { password_hash: bcrypt.hashSync(newPassword, 10) } }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
 app.post('/api/account/delete', async (req, res) => {
     try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId } = req.body; await col('posts').deleteMany({ user_id: userId }); await col('likes').deleteMany({ user_id: userId }); await col('comments').deleteMany({ user_id: userId }); await col('friends').deleteMany({ $or: [{ user_id: userId }, { friend_id: userId }] }); await col('messages').deleteMany({ $or: [{ sender_id: userId }, { receiver_id: userId }] }); await col('notifications').deleteMany({ user_id: userId }); await col('bookmarks').deleteMany({ user_id: userId }); await col('users').deleteOne({ id: userId }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// Serve frontend for any unmatched routes
-app.get('*', function(req, res) {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 
-// Delete event
-app.delete('/api/events/:eventId', async (req, res) => {
-    try { if (!db) return res.json({ success: false, error: 'Database not connected' }); const { userId } = req.body; const event = await col('events').findOne({ id: req.params.eventId }); if (!event) return res.json({ success: false, error: 'Event not found' }); if (event.user_id !== userId) return res.json({ success: false, error: 'Not your event' }); await col('events').deleteOne({ id: req.params.eventId }); res.json({ success: true }); } catch (err) { res.json({ success: false, error: err.message }); }
-});
-
-// ==================== START SERVER ====================
-async function startServer() {
-    await connectDB();
-    app.listen(PORT, () => {
-        console.log('');
-        console.log('╔══════════════════════════════════════════════╗');
-        console.log('║     🎭  MUSE SOCIAL MEDIA SERVER  🎭        ║');
-        console.log('║     Amusement Inc. - 24/7                    ║');
-        console.log('║     Sponsored by The Blue Whale Family       ║');
-        console.log('║     Database: MongoDB Atlas                  ║');
-        console.log('║     Port: ' + PORT + '                              ║');
-        console.log('╚══════════════════════════════════════════════╝');
-    });
-}
-
+async function startServer() { await connectDB(); app.listen(PORT, () => { console.log('🎭 MUSE SOCIAL MEDIA SERVER - Port: ' + PORT + ' - MongoDB Atlas'); }); }
 startServer();
